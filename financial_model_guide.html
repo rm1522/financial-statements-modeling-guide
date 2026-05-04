@@ -1,0 +1,1622 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>財務三表統合モデルの作り方 | サッポロHD(2501)</title>
+<style>
+:root {
+  /* ── Book palette ── */
+  --navy:    #5C1E2C;   /* Burgundy – chapter headings, table headers     */
+  --navy-dk: #1A1510;   /* Leather dark – sidebar, hero background        */
+  --navy-lt: #7C3045;   /* Medium burgundy – hover states                 */
+  --gold:    #A8760A;   /* Antique gold – callout accents, section badges */
+  --gold-lt: #C99637;   /* Lighter gold – sidebar title, highlights       */
+  --blue:    #1B4A7A;   /* Steel blue – P/L, info elements                */
+  --green:   #1A5C35;   /* Forest green – B/S, success                    */
+  --red:     #8B1A24;   /* Wine red – errors, danger                      */
+  --orange:  #994A15;   /* Burnt sienna – warnings                        */
+  --bg:      #FAF7F2;   /* Parchment – main page background               */
+  --white:   #FFFFFF;   /* Card / content white                           */
+  --text:    #1C1917;   /* Warm ink – primary text                        */
+  --text-mid:#44403C;   /* Secondary text                                 */
+  --text-lt: #7A7068;   /* Caption / muted text                           */
+  --border:  #D9D3CB;   /* Warm gray border                               */
+  --code-bg: #F0EBE3;   /* Warm code / formula background                 */
+  --tbl-alt: #F5EFE8;   /* Table alternating rows                         */
+  --xl-blue:    #1F4E79; --xl-green: #375623; --xl-formula: #1C1917;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Helvetica Neue', 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif; background: var(--bg); color: var(--text); display: flex; min-height: 100vh; }
+
+/* ── Sidebar ── */
+#sidebar {
+  width: 260px; min-width: 260px; background: var(--navy-dk);
+  position: fixed; top: 0; left: 0; height: 100vh; overflow-y: auto;
+  display: flex; flex-direction: column; z-index: 100;
+}
+#sidebar-header { padding: 20px 16px 14px; border-bottom: 2px solid var(--gold); }
+#sidebar-header h1 { font-size: 13px; color: var(--gold-lt); font-weight: 700; line-height: 1.5; }
+#sidebar-header p  { font-size: 10px; color: var(--text-lt); margin-top: 4px; }
+#sidebar nav { padding: 8px 0; flex: 1; }
+.nav-item {
+  display: block; padding: 9px 16px; color: #C8BEB3; font-size: 12px;
+  cursor: pointer; border-left: 3px solid transparent; transition: all .15s;
+  text-decoration: none;
+}
+.nav-item:hover  { background: var(--navy-lt); color: var(--white); border-left-color: var(--gold); }
+.nav-item.active { background: var(--navy-lt); color: var(--gold-lt); border-left-color: var(--gold); font-weight: 600; }
+.nav-section { padding: 12px 16px 4px; font-size: 10px; color: var(--text-lt); text-transform: uppercase; letter-spacing: 1px; }
+
+/* ── Main ── */
+#main { margin-left: 260px; flex: 1; padding: 0; }
+.section {
+  padding: 56px 52px 64px; border-bottom: 1px solid var(--border);
+  max-width: 960px;
+}
+.section:last-child { border-bottom: none; }
+.section-number {
+  display: inline-block; background: var(--gold); color: var(--navy-dk);
+  font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 2px;
+  margin-bottom: 10px; letter-spacing: .5px;
+}
+.section h2 { font-size: 28px; color: var(--navy); margin-bottom: 8px; line-height: 1.3; }
+.section .lead { font-size: 15px; color: var(--text-mid); margin-bottom: 28px; line-height: 1.7; }
+
+/* ── Hero ── */
+#hero {
+  background: var(--navy-dk); color: var(--white); padding: 72px 52px 64px;
+  border-left: 6px solid var(--gold); max-width: none;
+}
+#hero h1 { font-size: 38px; font-weight: 700; line-height: 1.25; margin-bottom: 16px; }
+#hero .sub { font-size: 16px; color: var(--gold-lt); font-style: italic; margin-bottom: 32px; }
+.hero-meta { display: flex; gap: 32px; flex-wrap: wrap; }
+.hero-meta-item { font-size: 13px; color: #C8BEB3; }
+.hero-meta-item strong { color: var(--gold-lt); display: block; font-size: 11px; margin-bottom: 3px; text-transform: uppercase; letter-spacing: .5px; }
+
+/* ── Cards ── */
+.card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin: 24px 0; }
+.card {
+  background: var(--white); border: 1px solid var(--border); border-radius: 6px;
+  padding: 20px; border-left: 4px solid var(--gold);
+  box-shadow: 0 2px 8px rgba(0,0,0,.06);
+}
+.card h3 { font-size: 14px; color: var(--navy); margin-bottom: 8px; }
+.card p  { font-size: 13px; color: var(--text-mid); line-height: 1.6; }
+.card.blue   { border-left-color: var(--blue);   } .card.blue   h3 { color: var(--blue);   }
+.card.green  { border-left-color: var(--green);  } .card.green  h3 { color: var(--green);  }
+.card.gold   { border-left-color: var(--gold);   } .card.gold   h3 { color: var(--navy);   }
+.card.red    { border-left-color: var(--red);    } .card.red    h3 { color: var(--red);    }
+.card.orange { border-left-color: var(--orange); } .card.orange h3 { color: var(--orange); }
+
+/* ── Three Statements visual ── */
+.stmt-cards { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin: 24px 0; }
+.stmt-card { border-radius: 8px; padding: 20px; color: var(--white); box-shadow: 0 4px 16px rgba(0,0,0,.15); }
+.stmt-card.pl  { background: var(--blue); }
+.stmt-card.bs  { background: var(--green); }
+.stmt-card.cfs { background: var(--gold); }
+.stmt-card.cfs { color: var(--navy-dk); }
+.stmt-card .num  { font-size: 32px; font-weight: 900; opacity: .3; line-height: 1; }
+.stmt-card h3    { font-size: 16px; font-weight: 700; margin: 4px 0 8px; }
+.stmt-card .abbr { font-size: 12px; opacity: .8; margin-bottom: 10px; }
+.stmt-card p     { font-size: 12.5px; line-height: 1.6; opacity: .92; }
+.stmt-card .sample { background: rgba(0,0,0,.15); border-radius: 4px; padding: 10px; margin-top: 12px; font-size: 11.5px; font-family: monospace; white-space: pre; line-height: 1.8; }
+.stmt-card.cfs .sample { background: rgba(0,0,0,.10); }
+
+/* ── Excel Component ── */
+.excel-wrap { margin: 24px 0; border: 1px solid #C8CDD2; border-radius: 4px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,.1); }
+.excel-title { background: #217346; color: var(--white); padding: 6px 14px; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+.excel-title span { opacity: .7; font-size: 11px; }
+.formula-bar { background: #F3F3F3; border-bottom: 1px solid #C8CDD2; padding: 5px 12px; font-size: 12px; display: flex; align-items: center; gap: 10px; font-family: 'Consolas','Courier New',monospace; min-height: 28px; }
+.formula-bar .cell-ref { background: #fff; border: 1px solid #C8CDD2; padding: 2px 8px; min-width: 60px; text-align: center; font-size: 11.5px; color: var(--navy); }
+.formula-bar .formula-text { color: var(--navy); flex: 1; font-size: 12px; }
+.excel-table-wrap { overflow-x: auto; }
+table.xl {
+  border-collapse: collapse; width: 100%; font-size: 12px;
+  font-family: 'Calibri', 'Hiragino Kaku Gothic ProN', sans-serif;
+}
+table.xl th.col-header {
+  background: #E9EFF4; border: 1px solid #C8CDD2; padding: 3px 6px;
+  text-align: center; font-weight: 600; font-size: 11px; color: #555; min-width: 38px; width: 38px;
+}
+table.xl th.row-header {
+  background: #E9EFF4; border: 1px solid #C8CDD2; padding: 3px 6px;
+  text-align: center; font-weight: 600; font-size: 11px; color: #555; min-width: 32px; width: 32px;
+}
+table.xl td {
+  border: 1px solid #D0D7E0; padding: 3px 7px; white-space: nowrap;
+  background: var(--white); cursor: default; min-width: 90px;
+}
+table.xl td.selected { background: #E8F0FE !important; outline: 2px solid #1967D2; outline-offset: -2px; }
+table.xl td.label  { color: var(--text); font-weight: 500; min-width: 200px; }
+table.xl td.label.indent1 { padding-left: 20px; }
+table.xl td.label.indent2 { padding-left: 36px; }
+table.xl td.hardcode { color: #1F4E79; font-weight: 600; text-align: right; }
+table.xl td.formula  { color: #1A1A2E; text-align: right; }
+table.xl td.xref     { color: #375623; font-weight: 600; text-align: right; }
+table.xl td.total    { font-weight: 700; text-align: right; background: #F0F4F8; }
+table.xl td.total-row { background: #F0F4F8; font-weight: 700; }
+table.xl td.section-hdr { background: var(--navy); color: var(--white); font-weight: 700; padding: 4px 7px; }
+table.xl td.section-hdr-blue  { background: #2E5FA3; color: var(--white); font-weight: 700; }
+table.xl td.section-hdr-green { background: #27572D; color: var(--white); font-weight: 700; }
+table.xl td.section-hdr-gold  { background: #7D5A00; color: var(--white); font-weight: 700; }
+table.xl td.negative { color: var(--red); }
+table.xl tr:hover td:not(.col-header) { background: #F5F8FF; }
+
+/* color legend */
+.xl-legend { display: flex; gap: 20px; margin: 8px 0 4px; flex-wrap: wrap; }
+.xl-legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-mid); }
+.xl-legend-dot { width: 12px; height: 12px; border-radius: 2px; }
+
+/* ── Callout boxes ── */
+.callout {
+  border-radius: 6px; padding: 16px 20px; margin: 20px 0;
+  border-left: 4px solid; font-size: 14px; line-height: 1.7;
+}
+.callout.warning  { background: #FFF7E6; border-color: var(--orange); }
+.callout.danger   { background: #FFF0F0; border-color: var(--red); }
+.callout.tip      { background: #E8FDF0; border-color: var(--green); }
+.callout.info     { background: #E8F4FD; border-color: var(--blue); }
+.callout.key      { background: #FFFBEC; border-color: var(--gold); }
+.callout strong   { display: block; margin-bottom: 6px; font-size: 13px; text-transform: uppercase; letter-spacing: .5px; }
+.callout.warning strong { color: var(--orange); }
+.callout.danger  strong { color: var(--red);    }
+.callout.tip     strong { color: var(--green);  }
+.callout.info    strong { color: var(--blue);   }
+.callout.key     strong { color: var(--gold);     }
+
+/* ── Formula display ── */
+.formula-box {
+  background: var(--code-bg); border-radius: 6px; padding: 14px 18px;
+  font-family: 'Consolas','Courier New',monospace; font-size: 13px;
+  line-height: 1.9; margin: 16px 0; border-left: 3px solid var(--navy);
+}
+.formula-box .comment { color: var(--text-lt); font-style: italic; }
+.formula-box .cell    { color: var(--blue); font-weight: 600; }
+.formula-box .val     { color: var(--red); }
+.formula-box .ok      { color: var(--green); font-weight: 600; }
+.formula-box .bad     { color: var(--red); font-weight: 600; }
+
+/* ── Sign table ── */
+.sign-table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 13.5px; }
+.sign-table th { background: var(--navy); color: var(--white); padding: 10px 14px; text-align: left; font-weight: 600; font-size: 12px; }
+.sign-table td { padding: 10px 14px; border-bottom: 1px solid var(--border); }
+.sign-table tr:nth-child(even) td { background: var(--tbl-alt); }
+.sign-table td.up   { color: var(--red);   font-weight: 700; }
+.sign-table td.down { color: var(--green); font-weight: 700; }
+.sign-table td.minus { color: var(--red);   font-weight: 700; }
+.sign-table td.plus  { color: var(--green); font-weight: 700; }
+
+/* ── Error cards ── */
+.error-card {
+  background: var(--white); border: 1px solid var(--border); border-radius: 6px;
+  margin: 16px 0; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,.06);
+}
+.error-card-header {
+  display: flex; align-items: center; gap: 14px;
+  background: var(--red); color: var(--white); padding: 10px 16px;
+}
+.error-card-header .num  { font-size: 22px; font-weight: 900; opacity: .4; }
+.error-card-header h4    { font-size: 14px; font-weight: 700; }
+.error-card-body { padding: 16px 18px; }
+.error-compare { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 10px 0; }
+.ec-wrong { background: #FFF0F0; border: 1px solid #FFBCBC; border-radius: 4px; padding: 10px 14px; font-family: monospace; font-size: 12.5px; }
+.ec-right  { background: #E8FDF0; border: 1px solid #86EFAC; border-radius: 4px; padding: 10px 14px; font-family: monospace; font-size: 12.5px; }
+.ec-label  { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px; }
+.ec-wrong .ec-label { color: var(--red);   } .ec-right .ec-label { color: var(--green); }
+.ec-impact { font-size: 12.5px; color: var(--text-mid); margin-top: 10px; font-style: italic; }
+
+/* ── Validation table ── */
+.val-table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 13px; }
+.val-table th { background: var(--navy); color: var(--white); padding: 10px 14px; font-size: 12px; }
+.val-table td { padding: 9px 14px; border-bottom: 1px solid var(--border); }
+.val-table tr:nth-child(even) td { background: var(--tbl-alt); }
+.val-table td.check  { font-family: monospace; font-size: 12px; color: var(--navy); }
+.val-badge { display: inline-block; background: var(--green); color: var(--white); font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 3px; }
+
+/* ── Metrics table ── */
+.metrics-table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 13px; }
+.metrics-table th { background: var(--navy); color: var(--white); padding: 10px 14px; text-align: center; font-size: 12px; }
+.metrics-table th:first-child { text-align: left; }
+.metrics-table td { padding: 9px 14px; border-bottom: 1px solid var(--border); text-align: center; }
+.metrics-table td:first-child { text-align: left; font-weight: 600; }
+.metrics-table tr:nth-child(even) td { background: var(--tbl-alt); }
+.metrics-table td.highlight { background: #F5EFE0; font-weight: 700; color: var(--gold); }
+.metrics-table td.good    { color: var(--green); font-weight: 700; }
+.metrics-table td.bad     { color: var(--red);   font-weight: 600; }
+.metrics-table td.caution { color: var(--orange);font-weight: 600; }
+
+/* ── Steps ── */
+.steps { counter-reset: step; margin: 20px 0; }
+.step {
+  display: flex; gap: 16px; margin-bottom: 16px; align-items: flex-start;
+  background: var(--white); border: 1px solid var(--border); border-radius: 6px; padding: 16px;
+}
+.step-num {
+  counter-increment: step; content: counter(step);
+  min-width: 34px; height: 34px; border-radius: 50%;
+  background: var(--navy); color: var(--white);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; flex-shrink: 0;
+}
+.step-num.blue   { background: var(--blue); }
+.step-num.green  { background: var(--green); }
+.step-num.gold   { background: var(--gold); color: var(--navy-dk); }
+.step-num.orange { background: var(--orange); }
+.step-num.red    { background: var(--red); }
+.step-content h4 { font-size: 14px; color: var(--navy); margin-bottom: 4px; }
+.step-content p  { font-size: 13px; color: var(--text-mid); line-height: 1.6; }
+
+/* ── Flow diagram ── */
+.flow { display: flex; align-items: center; gap: 0; margin: 24px 0; flex-wrap: wrap; }
+.flow-box { background: var(--white); border: 2px solid var(--navy); border-radius: 8px; padding: 12px 18px; text-align: center; font-size: 13px; font-weight: 600; color: var(--navy); min-width: 130px; box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+.flow-box.blue  { background: var(--blue);  color: var(--white); border-color: var(--blue); }
+.flow-box.green { background: var(--green); color: var(--white); border-color: var(--green); }
+.flow-box.gold  { background: var(--gold);  color: var(--navy-dk); border-color: var(--gold); }
+.flow-box.red   { background: var(--red);   color: var(--white); border-color: var(--red); }
+.flow-box small { display: block; font-size: 11px; font-weight: 400; opacity: .85; margin-top: 3px; }
+.flow-arrow { font-size: 22px; color: var(--text-lt); padding: 0 8px; }
+
+/* ── Rollforward ── */
+.rollforward {
+  display: grid; grid-template-columns: 1fr auto 1fr auto 1fr; align-items: center;
+  gap: 16px; margin: 24px 0;
+}
+.rf-box { background: var(--white); border-radius: 8px; padding: 16px; text-align: center; border: 2px solid var(--border); box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+.rf-box.open  { border-color: var(--blue);  } .rf-box.open h4  { color: var(--blue);  }
+.rf-box.close { border-color: var(--green); } .rf-box.close h4 { color: var(--green); }
+.rf-box h4    { font-size: 13px; margin-bottom: 8px; }
+.rf-box .big  { font-size: 22px; font-weight: 800; color: var(--navy); }
+.rf-box small { display: block; font-size: 11px; color: var(--text-lt); margin-top: 2px; }
+.rf-ops { text-align: center; font-size: 13px; line-height: 2.2; }
+.rf-ops .plus  { color: var(--green); font-weight: 700; }
+.rf-ops .minus { color: var(--red);   font-weight: 700; }
+.rf-arrow { font-size: 28px; color: var(--navy); text-align: center; }
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+  #sidebar { width: 220px; min-width: 220px; }
+  #main { margin-left: 220px; }
+  .section { padding: 36px 24px 48px; }
+  .stmt-cards { grid-template-columns: 1fr; }
+  .rollforward { grid-template-columns: 1fr; }
+  .rf-arrow, .rf-ops { display: none; }
+  .error-compare { grid-template-columns: 1fr; }
+}
+@media (max-width: 700px) {
+  #sidebar { display: none; }
+  #main { margin-left: 0; }
+}
+
+h3.sub-heading { font-size: 18px; color: var(--navy); margin: 32px 0 12px; padding-bottom: 6px; border-bottom: 2px solid var(--border); }
+p.body { font-size: 14px; line-height: 1.8; color: var(--text); margin-bottom: 14px; }
+ul.body, ol.body { font-size: 14px; line-height: 1.9; color: var(--text); margin: 12px 0 12px 24px; }
+code { font-family: 'Consolas','Courier New',monospace; background: var(--code-bg); padding: 1px 6px; border-radius: 3px; font-size: 12.5px; color: var(--navy); }
+</style>
+</head>
+<body>
+
+<!-- ══ Sidebar ══════════════════════════════════════════════════════ -->
+<div id="sidebar">
+  <div id="sidebar-header">
+    <h1>財務三表統合モデルの作り方</h1>
+    <p>サッポロHD (2501) · IFRS連結</p>
+  </div>
+  <nav>
+    <span class="nav-section">基礎</span>
+    <a class="nav-item active" onclick="scrollTo('hero')">はじめに</a>
+    <a class="nav-item" onclick="scrollTo('basics')">財務諸表とは</a>
+    <a class="nav-item" onclick="scrollTo('glossary')">用語集</a>
+    <a class="nav-item" onclick="scrollTo('three')">財務三表の詳細</a>
+    <a class="nav-item" onclick="scrollTo('integration')">なぜ統合モデルか</a>
+    <a class="nav-item" onclick="scrollTo('erdiagram')">三表のつながり図</a>
+    <span class="nav-section">Excelモデル</span>
+    <a class="nav-item" onclick="scrollTo('structure')">Excelの構造</a>
+    <a class="nav-item" onclick="scrollTo('pl')">P/Lモデリング</a>
+    <a class="nav-item" onclick="scrollTo('bs')">B/Sモデリング</a>
+    <a class="nav-item" onclick="scrollTo('ppe')">PP&Eロールフォワード</a>
+    <a class="nav-item" onclick="scrollTo('cfs')">CFSモデリング</a>
+    <a class="nav-item" onclick="scrollTo('signs')">運転資本の符号</a>
+    <a class="nav-item" onclick="scrollTo('links')">三表の連動リンク</a>
+    <a class="nav-item" onclick="scrollTo('debt')">有利子負債スケジュール</a>
+    <span class="nav-section">品質管理</span>
+    <a class="nav-item" onclick="scrollTo('errors')">よくあるエラー5選</a>
+    <a class="nav-item" onclick="scrollTo('validation')">バリデーション</a>
+    <a class="nav-item" onclick="scrollTo('metrics')">財務指標の読み方</a>
+    <a class="nav-item" onclick="scrollTo('summary')">まとめ・10ステップ</a>
+  </nav>
+</div>
+
+<!-- ══ Main ══════════════════════════════════════════════════════════ -->
+<div id="main">
+
+<!-- Hero -->
+<section class="section" id="hero" style="padding:72px 52px 64px; background:var(--navy-dk); border-left:6px solid var(--gold); max-width:none; border-bottom:none;">
+  <h1 style="font-size:38px; font-weight:700; color:var(--white); line-height:1.25; margin-bottom:14px;">財務三表統合モデルの作り方</h1>
+  <p class="sub" style="font-size:16px; color:var(--gold-lt); font-style:italic; margin-bottom:32px;">〜企業財務分析の入門から実践まで〜</p>
+  <div class="hero-meta">
+    <div class="hero-meta-item"><strong>対象企業</strong>サッポロホールディングス（東証：2501）</div>
+    <div class="hero-meta-item"><strong>会計基準</strong>IFRS（国際財務報告基準）連結</div>
+    <div class="hero-meta-item"><strong>予測期間</strong>2026E〜2030E（5ヶ年予測）</div>
+    <div class="hero-meta-item"><strong>使用ツール</strong>Microsoft Excel</div>
+  </div>
+</section>
+
+<!-- 1. 財務諸表とは -->
+<section class="section" id="basics">
+  <div class="section-number">SECTION 1</div>
+  <h2>そもそも「財務諸表」って何？</h2>
+  <p class="lead">上場企業は法律によって毎年「財務諸表」を公開する義務があります。これは企業の「通知表」。数字を読むことで「儲かっているか」「借金が多すぎないか」「実際に現金はあるか」が分かります。</p>
+
+  <div class="card-grid">
+    <div class="card gold"><h3>就職活動</h3><p>志望企業の財務状況を数字で理解することで、企業研究の深さが格段に変わる。面接でも差がつく。</p></div>
+    <div class="card blue"><h3>投資</h3><p>株式投資をする際に、企業の実力を数字で客観的に評価できる。PERやROEの意味も自然と分かる。</p></div>
+    <div class="card green"><h3>ビジネス</h3><p>経営者・コンサル・投資家・銀行員として働く際に必須の知識。数字で語れる人材は希少。</p></div>
+    <div class="card orange"><h3>日常生活</h3><p>「〇〇社が赤字転落」「債務超過で上場廃止」といったニュースの本質が正確に理解できる。</p></div>
+  </div>
+
+  <div class="callout warning">
+    <strong>黒字倒産とは？</strong>
+    P/Lでは「利益が出た」と表示されていても、現金がなくて倒産することがあります。3月に1億円の商品を売っても代金回収が6月なら、4月の仕入代金が払えず倒産。だからP/Lだけでは不十分で、現金の動きを見るCFSが必要なのです。
+  </div>
+</section>
+
+<!-- 用語集 -->
+<section class="section" id="glossary">
+  <div class="section-number">用語集</div>
+  <h2>財務モデルで使う専門用語</h2>
+  <p class="lead">このガイドで頻出する用語を五十音順にまとめました。用語をクリックすると詳細が展開します。</p>
+
+  <div style="margin-bottom:20px;">
+    <input type="text" id="glossary-search" placeholder="用語を検索…" oninput="filterGlossary()"
+      style="width:100%; max-width:400px; padding:9px 14px; border:1px solid var(--border); border-radius:6px;
+             font-size:14px; font-family:inherit; color:var(--text); background:var(--white); outline:none;">
+  </div>
+
+  <div id="glossary-list">
+
+    <!-- ── 基本概念 ── -->
+    <div class="gloss-category">基本概念</div>
+
+    <div class="gloss-item" data-term="IFRS 国際財務報告基準">
+      <div class="gloss-header" onclick="toggleGloss(this)">
+        <div class="gloss-title"><span class="gloss-ja">IFRS</span><span class="gloss-en">International Financial Reporting Standards（国際財務報告基準）</span></div>
+        <span class="gloss-arrow">▼</span>
+      </div>
+      <div class="gloss-body">
+        <p>世界140以上の国・地域で採用されている会計基準のルールブック。日本の会計基準（J-GAAP）と違い、<strong>減損やリースの処理方法が異なる</strong>。サッポロHDはIFRSで連結財務諸表を作成しており、のれん（Goodwill）の償却がないのが特徴。</p>
+        <div class="gloss-example">例：日本基準ではのれんを20年で毎年償却するが、IFRSでは償却せず「減損テスト」で価値を確認する。</div>
+      </div>
+    </div>
+
+    <div class="gloss-item" data-term="IFRS 連結 連結財務諸表">
+      <div class="gloss-header" onclick="toggleGloss(this)">
+        <div class="gloss-title"><span class="gloss-ja">連結財務諸表</span><span class="gloss-en">Consolidated Financial Statements</span></div>
+        <span class="gloss-arrow">▼</span>
+      </div>
+      <div class="gloss-body">
+        <p>親会社と子会社グループ全体を1つの会社とみなして合算した財務諸表。サッポロHDの場合、サッポロビール・ポッカサッポロ・恵比寿ガーデンプレイスなどグループ100社以上を合算した数字が載っている。</p>
+        <div class="gloss-example">例：親会社単体の売上が100億円でも、子会社を含む連結では500億円になることがある。</div>
+      </div>
+    </div>
+
+    <div class="gloss-item" data-term="期首 期末 残高">
+      <div class="gloss-header" onclick="toggleGloss(this)">
+        <div class="gloss-title"><span class="gloss-ja">期首・期末</span><span class="gloss-en">Beginning of Period / End of Period</span></div>
+        <span class="gloss-arrow">▼</span>
+      </div>
+      <div class="gloss-body">
+        <p><strong>期首（きしゅ）</strong>＝会計年度の最初の日（サッポロは1月1日）。<strong>期末（きまつ）</strong>＝会計年度の最後の日（12月31日）。B/Sの数字は「ある時点の残高」なので、期首と期末で2枚のスナップ写真が存在する。財務モデルでは前年の期末残高がそのまま翌年の期首残高になる。</p>
+        <div class="gloss-example">例：2025年末のB/S（期末） = 2026年初のB/S（期首）</div>
+      </div>
+    </div>
+
+    <!-- ── P/L用語 ── -->
+    <div class="gloss-category">損益計算書（P/L）</div>
+
+    <div class="gloss-item" data-term="売上収益 売上 売上高">
+      <div class="gloss-header" onclick="toggleGloss(this)">
+        <div class="gloss-title"><span class="gloss-ja">売上収益</span><span class="gloss-en">Revenue / Net Sales</span></div>
+        <span class="gloss-arrow">▼</span>
+      </div>
+      <div class="gloss-body">
+        <p>その年に商品・サービスを顧客に引き渡すことで得た収入の合計。「いくら売れたか」を表す最上段の数字。日本基準では「売上高」と呼ぶが、IFRSでは「売上収益」と表記することが多い。これが増えれば売上成長、減れば縮小傾向を示す。</p>
+        <div class="gloss-example">サッポロHD 2025年：518,632百万円（約5,186億円）</div>
+      </div>
+    </div>
+
+    <div class="gloss-item" data-term="営業利益 EBIT">
+      <div class="gloss-header" onclick="toggleGloss(this)">
+        <div class="gloss-title"><span class="gloss-ja">営業利益（EBIT）</span><span class="gloss-en">Operating Profit / EBIT</span></div>
+        <span class="gloss-arrow">▼</span>
+      </div>
+      <div class="gloss-body">
+        <p>売上収益から売上原価・販管費などの本業にかかるコストをすべて引いた後の利益。<strong>「本業でどれだけ稼いだか」</strong>を表す最重要指標。支払利息や法人税は引く前なので、資本構成や税率に左右されず企業の実力を比較しやすい。EBITはEarnings Before Interest and Taxesの略。</p>
+        <div class="gloss-example">例：営業利益率 = 営業利益 ÷ 売上収益 × 100。サッポロHDは約2.3%（食品・飲料業界は一般的に低め）</div>
+      </div>
+    </div>
+
+    <div class="gloss-item" data-term="当期純利益 純利益 EPS">
+      <div class="gloss-header" onclick="toggleGloss(this)">
+        <div class="gloss-title"><span class="gloss-ja">当期純利益</span><span class="gloss-en">Net Income / Profit for the Period</span></div>
+        <span class="gloss-arrow">▼</span>
+      </div>
+      <div class="gloss-body">
+        <p>すべての費用・税金・支払利息を引いた後に残る最終的な利益。P/Lの最終行（ボトムライン）。これがB/Sの「繰越利益剰余金」に加算されることで三表がつながる。ただし「利益が出た」≠「現金が増えた」であることに注意。</p>
+        <div class="gloss-example">例：2025年実績 8,758百万円 → B/Sの繰越利益剰余金に加算 → 翌年期首の自己資本が増える</div>
+      </div>
+    </div>
+
+    <div class="gloss-item" data-term="減価償却 D&A 償却">
+      <div class="gloss-header" onclick="toggleGloss(this)">
+        <div class="gloss-title"><span class="gloss-ja">減価償却費</span><span class="gloss-en">Depreciation &amp; Amortization（D&amp;A）</span></div>
+        <span class="gloss-arrow">▼</span>
+      </div>
+      <div class="gloss-body">
+        <p>工場・設備などの固定資産は、購入した年に全額費用にするのではなく、使用期間にわたって少しずつ費用計上する。この<strong>「分割して費用化する」</strong>処理が減価償却。現金の支出は伴わない「非現金費用」なので、CFS（間接法）ではP/Lの利益に足し戻す。</p>
+        <div class="gloss-example">例：1億円の機械を10年で使う場合 → 毎年1,000万円を費用化（定額法の場合）。現金は購入時に払い済みなのでCFSでは足し戻す。</div>
+      </div>
+    </div>
+
+    <!-- ── B/S用語 ── -->
+    <div class="gloss-category">貸借対照表（B/S）</div>
+
+    <div class="gloss-item" data-term="繰越利益剰余金 利益剰余金 retained earnings">
+      <div class="gloss-header" onclick="toggleGloss(this)">
+        <div class="gloss-title"><span class="gloss-ja">繰越利益剰余金</span><span class="gloss-en">Retained Earnings</span></div>
+        <span class="gloss-arrow">▼</span>
+      </div>
+      <div class="gloss-body">
+        <p>会社が創業以来、稼いだ利益のうち<strong>株主に配当せず社内に溜め込んできた累計額</strong>。毎年の当期純利益が加算され、配当を支払うと減算される。「会社の貯金箱」のようなもの。B/Sの純資産の部（株主資本）に計上され、資産・負債バランスをつなぐ重要な項目。</p>
+        <div class="gloss-example">繰越利益剰余金（期末）= 繰越利益剰余金（期首）+ 当期純利益 − 配当金支払額<br>→ 財務モデルでは B/S の「利益剰余金」行がこの計算式になっている</div>
+      </div>
+    </div>
+
+    <div class="gloss-item" data-term="有利子負債 負債 借入金 社債">
+      <div class="gloss-header" onclick="toggleGloss(this)">
+        <div class="gloss-title"><span class="gloss-ja">有利子負債</span><span class="gloss-en">Interest-Bearing Debt</span></div>
+        <span class="gloss-arrow">▼</span>
+      </div>
+      <div class="gloss-body">
+        <p><strong>利子（金利）を支払う義務がある借金</strong>の総称。銀行借入・社債・リース負債などが含まれる。「買掛金」や「未払い費用」は利子がないので含まない。財務モデルでは「有利子負債スケジュール」として別表で管理し、返済・新規借入を毎年追跡する。</p>
+        <div class="gloss-example">含まれる：銀行借入金、社債、リース負債<br>含まれない：買掛金、未払費用、前受金</div>
+      </div>
+    </div>
+
+    <div class="gloss-item" data-term="運転資本 WC working capital 売掛金 買掛金 棚卸資産 在庫">
+      <div class="gloss-header" onclick="toggleGloss(this)">
+        <div class="gloss-title"><span class="gloss-ja">運転資本（WC）</span><span class="gloss-en">Working Capital</span></div>
+        <span class="gloss-arrow">▼</span>
+      </div>
+      <div class="gloss-body">
+        <p>日常の事業活動で必要な短期資金のこと。<strong>売掛金（AR）・棚卸資産（在庫）・買掛金（AP）</strong>が主な構成要素。<br>
+        ・<b>売掛金</b>：商品を売ったが、まだ現金を受け取っていない金額<br>
+        ・<b>棚卸資産</b>：倉庫に積んである商品・原材料の在庫<br>
+        ・<b>買掛金</b>：仕入れたが、まだ代金を払っていない金額</p>
+        <div class="gloss-example">運転資本増加 → 現金が社外に出た（CFS マイナス）<br>売掛金100億円増加 = 商品を売ったが現金未回収 → キャッシュフロー減少</div>
+      </div>
+    </div>
+
+    <div class="gloss-item" data-term="非支配株主 NCI 少数株主">
+      <div class="gloss-header" onclick="toggleGloss(this)">
+        <div class="gloss-title"><span class="gloss-ja">非支配株主持分（NCI）</span><span class="gloss-en">Non-Controlling Interest</span></div>
+        <span class="gloss-arrow">▼</span>
+      </div>
+      <div class="gloss-body">
+        <p>子会社の株式を親会社以外の株主が持っている部分。例えばサッポロHDがある子会社を80%保有していれば、残り20%の持分が「非支配株主持分」。連結B/Sでは純資産の一部として計上されるが、親会社の株主に帰属するものではない。旧称「少数株主持分」。</p>
+        <div class="gloss-example">親会社帰属の当期純利益 = 連結純利益 − NCIに帰属する純利益<br>サッポロHD：毎年約40〜50百万円がNCIに帰属</div>
+      </div>
+    </div>
+
+    <div class="gloss-item" data-term="のれん goodwill 無形資産">
+      <div class="gloss-header" onclick="toggleGloss(this)">
+        <div class="gloss-title"><span class="gloss-ja">のれん</span><span class="gloss-en">Goodwill</span></div>
+        <span class="gloss-arrow">▼</span>
+      </div>
+      <div class="gloss-body">
+        <p>企業を買収（M&A）した際に、純資産の帳簿価額を超えて支払った「ブランド・技術・顧客基盤などの超過収益力」。IFRSでは毎年償却せず、価値が下がったときだけ「減損」として一括費用処理する。のれんが突然減損されると純利益が大幅に悪化するリスクがある。</p>
+        <div class="gloss-example">例：純資産100億円の会社を150億円で買収 → のれん50億円をB/Sに計上<br>（IFRSでは以降この50億円を毎年費用化しない）</div>
+      </div>
+    </div>
+
+    <div class="gloss-item" data-term="PP&E 有形固定資産 固定資産 設備投資 Capex">
+      <div class="gloss-header" onclick="toggleGloss(this)">
+        <div class="gloss-title"><span class="gloss-ja">有形固定資産（PP&amp;E）</span><span class="gloss-en">Property, Plant &amp; Equipment</span></div>
+        <span class="gloss-arrow">▼</span>
+      </div>
+      <div class="gloss-body">
+        <p>土地・建物・機械・車両・工場設備など<strong>形のある長期資産</strong>の総称。「固定」とは1年以上使う資産という意味。毎期の減価償却で帳簿価額が減少する。財務モデルでは「PP&Eロールフォワード」という表でその増減を管理する。設備投資（Capex）で増加し、減価償却で減少する。</p>
+        <div class="gloss-example">期末PP&E = 期首PP&E + 設備投資(Capex) − 減価償却費 ± その他</div>
+      </div>
+    </div>
+
+    <!-- ── CFS用語 ── -->
+    <div class="gloss-category">キャッシュフロー計算書（CFS）</div>
+
+    <div class="gloss-item" data-term="間接法 営業キャッシュフロー CF 現金">
+      <div class="gloss-header" onclick="toggleGloss(this)">
+        <div class="gloss-title"><span class="gloss-ja">間接法</span><span class="gloss-en">Indirect Method</span></div>
+        <span class="gloss-arrow">▼</span>
+      </div>
+      <div class="gloss-body">
+        <p>CFSの作成方法の一つ。<strong>P/Lの当期純利益を出発点として、現金の動きを伴わない項目（減価償却費など）を加算・減算して営業CFを求める方法</strong>。ほとんどの上場企業はこの方法を採用。直接法（現金の入出金を直接記録）より簡単に作れる。財務モデルでも間接法で組むのが標準。</p>
+        <div class="gloss-example">営業CF（間接法）= 当期純利益<br>&nbsp;&nbsp;&nbsp;&nbsp;+ 減価償却費（非現金）<br>&nbsp;&nbsp;&nbsp;&nbsp;− 売掛金の増加（現金未回収）<br>&nbsp;&nbsp;&nbsp;&nbsp;+ 買掛金の増加（現金未払い）</div>
+      </div>
+    </div>
+
+    <!-- ── モデリング用語 ── -->
+    <div class="gloss-category">財務モデリング用語</div>
+
+    <div class="gloss-item" data-term="ロールフォワード rollforward 期首 期末">
+      <div class="gloss-header" onclick="toggleGloss(this)">
+        <div class="gloss-title"><span class="gloss-ja">ロールフォワード</span><span class="gloss-en">Rollforward / Roll-Forward Schedule</span></div>
+        <span class="gloss-arrow">▼</span>
+      </div>
+      <div class="gloss-body">
+        <p>期首残高から期末残高へ至る増減を<strong>「足し算・引き算で1行ずつ追う」</strong>形式の表のこと。「期首 → +増加 − 減少 → 期末」という構造で、残高の変化理由が一目でわかる。財務モデルでは PP&E（固定資産）・有利子負債・繰越利益剰余金などで必ず使う基本テクニック。</p>
+        <div class="gloss-example">PP&Eロールフォワードの例：<br>期首残高　　　200,000<br>+ 設備投資(Capex)　+15,000<br>− 減価償却費　　 −18,000<br>= 期末残高　　　197,000</div>
+      </div>
+    </div>
+
+    <div class="gloss-item" data-term="DOE 配当 dividend equity">
+      <div class="gloss-header" onclick="toggleGloss(this)">
+        <div class="gloss-title"><span class="gloss-ja">DOE（配当の計算方法）</span><span class="gloss-en">Dividend on Equity</span></div>
+        <span class="gloss-arrow">▼</span>
+      </div>
+      <div class="gloss-body">
+        <p>配当金の額を「<strong>自己資本の何%か</strong>」で決める方式。配当額 ÷ 自己資本 = DOE。純利益が上下しても自己資本は比較的安定しているため、配当の安定性を高めやすい。サッポロHDはDOEを配当方針として採用しており、財務モデルでも DOE × 前期自己資本 で配当額を計算する。</p>
+        <div class="gloss-example">DOE = 2%、前期自己資本 = 100,000百万円<br>→ 配当金 = 100,000 × 2% = 2,000百万円<br>（DOEと違うDPS：1株あたりの配当金額のこと）</div>
+      </div>
+    </div>
+
+    <div class="gloss-item" data-term="仮定 前提 assumption 成長率">
+      <div class="gloss-header" onclick="toggleGloss(this)">
+        <div class="gloss-title"><span class="gloss-ja">前提・仮定（Assumptions）</span><span class="gloss-en">Assumptions / Drivers</span></div>
+        <span class="gloss-arrow">▼</span>
+      </div>
+      <div class="gloss-body">
+        <p>財務モデルで将来を予測するための<strong>「入力値」</strong>。売上成長率・利益率・設備投資額・配当性向など。モデルの出力（P/L・B/S・CFS）はすべてこの前提から計算される。前提を変えると結果がどう変わるかを試す作業を「感度分析（センシティビティ分析）」と呼ぶ。</p>
+        <div class="gloss-example">例：売上成長率を+3%と仮定 → 売上収益、売上原価、売上総利益がすべて連動して変化する</div>
+      </div>
+    </div>
+
+    <div class="gloss-item" data-term="バリデーション チェック 検証 BS balance">
+      <div class="gloss-header" onclick="toggleGloss(this)">
+        <div class="gloss-title"><span class="gloss-ja">バリデーション</span><span class="gloss-en">Validation / Model Check</span></div>
+        <span class="gloss-arrow">▼</span>
+      </div>
+      <div class="gloss-body">
+        <p>財務モデルに組み込む<strong>「エラー検出の仕組み」</strong>。最重要は「B/Sバランスチェック」：資産合計 = 負債合計 + 資本合計 が常に成立しているか確認する。Excelで TRUE/FALSE を返す検証セルを作り、FALSE になったら即調査する習慣をつける。モデルが大きくなるほど、どこでズレが起きているか見つけにくくなるため不可欠。</p>
+        <div class="gloss-example">=ABS(資産合計 − 負債資本合計) &lt;= 1 → TRUE ならOK、FALSE なら要調査</div>
+      </div>
+    </div>
+
+    <div class="gloss-item" data-term="感度分析 シナリオ sensitivity scenario">
+      <div class="gloss-header" onclick="toggleGloss(this)">
+        <div class="gloss-title"><span class="gloss-ja">感度分析</span><span class="gloss-en">Sensitivity / Scenario Analysis</span></div>
+        <span class="gloss-arrow">▼</span>
+      </div>
+      <div class="gloss-body">
+        <p>前提の数値を変化させたとき、結果（利益・FCFなど）がどう変わるかを試す分析。例えば「売上成長率が1%下がると営業利益はいくら変わるか」。ベースケース（通常予測）・アップサイドケース（好条件）・ダウンサイドケース（悪条件）の3シナリオで検討するのが一般的。</p>
+        <div class="gloss-example">売上成長率：+3% → 営業利益 15,000<br>売上成長率：+1% → 営業利益 11,000<br>売上成長率：−1% → 営業利益  8,000</div>
+      </div>
+    </div>
+
+    <div class="gloss-item" data-term="ROE ROA ROIC 収益性指標">
+      <div class="gloss-header" onclick="toggleGloss(this)">
+        <div class="gloss-title"><span class="gloss-ja">ROE / ROA / ROIC</span><span class="gloss-en">Return on Equity / Assets / Invested Capital</span></div>
+        <span class="gloss-arrow">▼</span>
+      </div>
+      <div class="gloss-body">
+        <p>資本をどれだけ効率よく使って利益を生んでいるかを表す収益性指標。<br>
+        ・<b>ROE</b>（自己資本利益率）= 当期純利益 ÷ 自己資本。株主の観点から「投資対効果」を見る。<br>
+        ・<b>ROA</b>（総資産利益率）= 当期純利益 ÷ 総資産。会社の資産全体の効率を見る。<br>
+        ・<b>ROIC</b>（投下資本利益率）= NOPAT ÷ 投下資本。事業に使った資本の効率を見る。</p>
+        <div class="gloss-example">サッポロHD ROE目標：10%以上（2025年実績：約4%で未達）</div>
+      </div>
+    </div>
+
+    <div class="gloss-item" data-term="EV EBITDA 企業価値 バリュエーション">
+      <div class="gloss-header" onclick="toggleGloss(this)">
+        <div class="gloss-title"><span class="gloss-ja">EV/EBITDA</span><span class="gloss-en">Enterprise Value / EBITDA Multiple</span></div>
+        <span class="gloss-arrow">▼</span>
+      </div>
+      <div class="gloss-body">
+        <p>企業の割安・割高を判断するための株式評価指標（バリュエーション倍率）。<br>
+        ・<b>EV（Enterprise Value）</b>＝時価総額 + 有利子負債 − 現金。「会社を丸ごと買うのにいくら必要か」<br>
+        ・<b>EBITDA</b>＝営業利益 + 減価償却費。資本構成や償却方法に左右されにくい「稼ぐ力」の代理指標。<br>
+        EV ÷ EBITDA の倍率を同業他社と比べることで割安・割高を判断する。</p>
+        <div class="gloss-example">食品・飲料業界の目安：EV/EBITDA = 8〜12倍<br>倍率が低い → 割安の可能性、または成長期待が低い</div>
+      </div>
+    </div>
+
+  </div><!-- /glossary-list -->
+</section>
+
+<style>
+.gloss-category {
+  font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
+  color: var(--text-lt); margin: 28px 0 8px; padding-bottom: 4px;
+  border-bottom: 1px solid var(--border);
+}
+.gloss-item {
+  background: var(--white); border: 1px solid var(--border); border-radius: 6px;
+  margin-bottom: 8px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,.04);
+}
+.gloss-item.hidden { display: none; }
+.gloss-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 16px; cursor: pointer; transition: background .12s;
+  user-select: none;
+}
+.gloss-header:hover { background: var(--tbl-alt); }
+.gloss-title { display: flex; align-items: baseline; gap: 12px; }
+.gloss-ja { font-size: 14px; font-weight: 700; color: var(--navy); }
+.gloss-en { font-size: 12px; color: var(--text-lt); }
+.gloss-arrow { font-size: 11px; color: var(--text-lt); transition: transform .2s; }
+.gloss-item.open .gloss-arrow { transform: rotate(180deg); }
+.gloss-body {
+  display: none; padding: 4px 16px 16px; border-top: 1px solid var(--border);
+  background: #FAFBFD;
+}
+.gloss-body p { font-size: 13.5px; line-height: 1.8; color: var(--text); margin: 10px 0 8px; }
+.gloss-body b { color: var(--navy); }
+.gloss-example {
+  background: var(--code-bg); border-left: 3px solid var(--navy);
+  padding: 10px 14px; border-radius: 4px; font-size: 12.5px; line-height: 1.9;
+  color: var(--text-mid); font-family: 'Consolas','Courier New',monospace; white-space: pre-line;
+}
+</style>
+
+<!-- 2. 財務三表の詳細 -->
+<section class="section" id="three">
+  <div class="section-number">SECTION 2</div>
+  <h2>財務三表とは何か：3つの「窓口」</h2>
+  <p class="lead">財務三表は企業の財務状況を3つの異なる角度から見た報告書です。それぞれが補い合っており、3つ揃って初めて企業の全体像が見えます。</p>
+
+  <div class="stmt-cards">
+    <div class="stmt-card pl">
+      <div class="num">01</div>
+      <h3>損益計算書</h3>
+      <div class="abbr">P/L — Profit &amp; Loss Statement</div>
+      <p>「この1年間でいくら儲けたか？」<br>収益から費用を引いた「年間収支」。</p>
+      <div class="sample">売上収益     518,632
+- 売上原価    361,793
+= 売上総利益  156,839
+- 販管費      141,206
+= 営業利益     11,820
+= 当期純利益    8,758</div>
+    </div>
+    <div class="stmt-card bs">
+      <div class="num">02</div>
+      <h3>貸借対照表</h3>
+      <div class="abbr">B/S — Balance Sheet</div>
+      <p>「今、どんな財産を持ち、借金はいくらか？」<br>ある時点の「財産と借金の一覧表」。</p>
+      <div class="sample">資産合計  653,690
+ = 負債合計  433,572
+ + 資本合計  220,117
+
+大原則：
+資産 = 負債 + 資本</div>
+    </div>
+    <div class="stmt-card cfs">
+      <div class="num">03</div>
+      <h3>CF計算書</h3>
+      <div class="abbr">CFS — Cash Flow Statement</div>
+      <p>「実際に現金をいくら受け取り、支払ったか？」<br>銀行通帳の動きそのもの。</p>
+      <div class="sample">営業CF  +45,446
+投資CF  -16,439
+財務CF  -27,140
+────────────
+現金増減  +1,867
+期末現金  24,140</div>
+    </div>
+  </div>
+</section>
+
+<!-- 3. なぜ統合モデルか -->
+<section class="section" id="integration">
+  <div class="section-number">SECTION 3</div>
+  <h2>なぜ「統合」モデルが必要か</h2>
+  <p class="lead">3つの財務諸表はバラバラに存在するのではなく、決まったルールで密接につながっています。統合モデルを作ると、1つの仮定を変えるだけですべてが自動更新されます。</p>
+
+  <h3 class="sub-heading">連動の連鎖：売上成長率を3%→5%に変えると…</h3>
+  <div class="flow" style="flex-wrap:wrap; gap:4px 0;">
+    <div class="flow-box blue">売上増加<small>P/L</small></div><div class="flow-arrow">→</div>
+    <div class="flow-box blue">営業利益増加<small>P/L</small></div><div class="flow-arrow">→</div>
+    <div class="flow-box blue">純利益増加<small>P/L</small></div><div class="flow-arrow">→</div>
+    <div class="flow-box green">利益剰余金増加<small>B/S</small></div>
+    <div style="width:100%; height:8px;"></div>
+    <div class="flow-box gold">営業CF増加<small>CFS</small></div><div class="flow-arrow">→</div>
+    <div class="flow-box gold">期末現金増加<small>CFS</small></div><div class="flow-arrow">→</div>
+    <div class="flow-box green">B/S現金増加<small>B/S</small></div><div class="flow-arrow">→</div>
+    <div class="flow-box blue">金融収益増加<small>次期P/L</small></div>
+  </div>
+
+  <div class="callout key">
+    <strong>統合モデルの最大の強み</strong>
+    売上の前提を一か所（Assumptionsシート）変えるだけで、P/L・B/S・CFSのすべてが自動的に更新される。シナリオ分析や感度分析が瞬時にできる。
+  </div>
+</section>
+
+<!-- ER図：三表のつながり -->
+<section class="section" id="erdiagram">
+  <div class="section-number">ER図</div>
+  <h2>財務三表のつながり図</h2>
+  <p class="lead">P/L・B/S・CFSは8本の「橋」でつながっています。各行の色付きバッジをクリックすると、その接続の意味とExcelの数式が表示されます。</p>
+
+  <div id="er-wrap" style="position:relative; margin:28px 0 0; user-select:none;">
+    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px;">
+
+      <!-- P/L -->
+      <div class="er-box" id="er-pl">
+        <div class="er-hdr" style="background:#1B4A7A;">損益計算書<span>P / L</span></div>
+        <div class="er-faint">売上収益</div>
+        <div class="er-faint">売上原価</div>
+        <div class="er-faint">売上総利益</div>
+        <div class="er-faint">販管費</div>
+        <div class="er-item er-linked" id="er-pl-da" data-conns="c3">
+          <span>減価償却費</span>
+          <button class="er-badge" style="background:#6B3F8E;" onclick="erShowConn('c3')">D</button>
+        </div>
+        <div class="er-faint">営業利益（EBIT）</div>
+        <div class="er-item er-linked" id="er-pl-intexp" data-conns="c8">
+          <span>金融費用（支払利息）</span>
+          <button class="er-badge" style="background:#7D5A00;" onclick="erShowConn('c8')">8</button>
+        </div>
+        <div class="er-faint">法人税</div>
+        <div class="er-item er-linked er-hi" id="er-pl-ni" data-conns="c1,c2">
+          <span>当期純利益</span>
+          <span style="display:flex;gap:4px;">
+            <button class="er-badge" style="background:#8B1A24;" onclick="erShowConn('c1')">1</button>
+            <button class="er-badge" style="background:#994A15;" onclick="erShowConn('c2')">2</button>
+          </span>
+        </div>
+      </div>
+
+      <!-- B/S -->
+      <div class="er-box" id="er-bs">
+        <div class="er-hdr" style="background:#1A5C35;">貸借対照表<span>B / S</span></div>
+        <div class="er-sub">◇ 資産の部</div>
+        <div class="er-item er-linked" id="er-bs-cash" data-conns="c4">
+          <span>現金・預金</span>
+          <button class="er-badge" style="background:#1A5C35;" onclick="erShowConn('c4')">4</button>
+        </div>
+        <div class="er-item er-linked" id="er-bs-wc" data-conns="c5">
+          <span>売掛金・棚卸資産</span>
+          <button class="er-badge" style="background:#0F5B5E;" onclick="erShowConn('c5')">5</button>
+        </div>
+        <div class="er-item er-linked" id="er-bs-ppe" data-conns="c3,c6">
+          <span>有形固定資産（PP&amp;E）</span>
+          <span style="display:flex;gap:4px;">
+            <button class="er-badge" style="background:#6B3F8E;" onclick="erShowConn('c3')">D</button>
+            <button class="er-badge" style="background:#1B4A7A;" onclick="erShowConn('c6')">6</button>
+          </span>
+        </div>
+        <div class="er-faint">その他資産</div>
+        <div class="er-sub">◇ 負債の部</div>
+        <div class="er-faint">買掛金等（無利子）</div>
+        <div class="er-item er-linked" id="er-bs-debt" data-conns="c7,c8">
+          <span>有利子負債（社債・借入）</span>
+          <span style="display:flex;gap:4px;">
+            <button class="er-badge" style="background:#1A1510;" onclick="erShowConn('c7')">7</button>
+            <button class="er-badge" style="background:#7D5A00;" onclick="erShowConn('c8')">8</button>
+          </span>
+        </div>
+        <div class="er-sub">◇ 純資産の部</div>
+        <div class="er-faint">資本金・資本剰余金</div>
+        <div class="er-item er-linked er-hi" id="er-bs-re" data-conns="c1">
+          <span>繰越利益剰余金</span>
+          <button class="er-badge" style="background:#8B1A24;" onclick="erShowConn('c1')">1</button>
+        </div>
+        <div class="er-faint">非支配株主持分</div>
+      </div>
+
+      <!-- CFS -->
+      <div class="er-box" id="er-cfs">
+        <div class="er-hdr" style="background:#7D5A00; color:#F5EFE8;">CF計算書<span>CFS</span></div>
+        <div class="er-sub">■ 営業CF（間接法）</div>
+        <div class="er-item er-linked" id="er-cfs-ni" data-conns="c2">
+          <span>当期純利益（出発点）</span>
+          <button class="er-badge" style="background:#994A15;" onclick="erShowConn('c2')">2</button>
+        </div>
+        <div class="er-item er-linked" id="er-cfs-da" data-conns="c3">
+          <span>＋ D&amp;A 足し戻し</span>
+          <button class="er-badge" style="background:#6B3F8E;" onclick="erShowConn('c3')">D</button>
+        </div>
+        <div class="er-item er-linked" id="er-cfs-wc" data-conns="c5">
+          <span>± 運転資本変化</span>
+          <button class="er-badge" style="background:#0F5B5E;" onclick="erShowConn('c5')">5</button>
+        </div>
+        <div class="er-total-row">＝ 営業CF合計</div>
+        <div class="er-sub">■ 投資CF</div>
+        <div class="er-item er-linked" id="er-cfs-capex" data-conns="c6">
+          <span>△ 設備投資（Capex）</span>
+          <button class="er-badge" style="background:#1B4A7A;" onclick="erShowConn('c6')">6</button>
+        </div>
+        <div class="er-sub">■ 財務CF</div>
+        <div class="er-item er-linked" id="er-cfs-fin" data-conns="c7">
+          <span>借入・返済・配当</span>
+          <button class="er-badge" style="background:#1A1510;" onclick="erShowConn('c7')">7</button>
+        </div>
+        <div class="er-item er-linked er-hi" id="er-cfs-endcash" data-conns="c4">
+          <span>期末現金残高</span>
+          <button class="er-badge" style="background:#1A5C35;" onclick="erShowConn('c4')">4</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SVG arrow overlay -->
+    <svg id="er-svg" aria-hidden="true" style="position:absolute;top:0;left:0;pointer-events:none;overflow:visible;"></svg>
+  </div>
+
+  <div style="margin-top:10px; font-size:12px; color:var(--text-lt); text-align:center;">↑ バッジをクリックすると下に説明が表示されます</div>
+
+  <!-- Connection detail panel -->
+  <div id="er-desc" style="display:none; margin-top:16px; padding:16px 20px; background:#FAFBFD; border:1px solid var(--border); border-radius:6px; font-size:13.5px; line-height:1.8; border-left:4px solid #999;"></div>
+</section>
+
+<style>
+.er-box { background:var(--white); border:1px solid var(--border); border-radius:8px; overflow:hidden; box-shadow:0 2px 10px rgba(0,0,0,.07); }
+.er-hdr { padding:10px 14px; color:var(--white); font-weight:700; display:flex; justify-content:space-between; align-items:center; font-size:14px; }
+.er-hdr span { font-size:11px; opacity:.85; font-weight:400; letter-spacing:.5px; }
+.er-sub { padding:4px 12px 3px; font-size:10px; font-weight:700; color:var(--text-lt); text-transform:uppercase; letter-spacing:.5px; background:var(--tbl-alt); border-top:1px solid var(--border); margin-top:2px; }
+.er-item { padding:7px 10px; font-size:12px; display:flex; align-items:center; justify-content:space-between; gap:6px; border-bottom:1px solid #F0F2F6; color:var(--text); }
+.er-item.er-linked { font-weight:500; transition:background .15s, outline .15s; }
+.er-item.er-hi { font-weight:700; background:#FFFBEC; }
+.er-faint { padding:6px 10px; font-size:12px; color:var(--text-lt); border-bottom:1px solid #F0F2F6; }
+.er-total-row { padding:7px 10px; font-size:12px; font-weight:700; background:#F0F4F8; border-top:1px solid var(--border); border-bottom:1px solid var(--border); color:var(--navy); }
+.er-badge { border:none; border-radius:50%; width:19px; height:19px; font-size:10px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; padding:0; line-height:1; transition:transform .1s, box-shadow .1s; }
+.er-badge:hover { transform:scale(1.2); box-shadow:0 2px 6px rgba(0,0,0,.3); }
+</style>
+
+<script>
+(function(){
+const ER_CONNS = {
+  c1:{ color:'#8B1A24', from:'er-pl-ni',      to:'er-bs-re',       arc:false,
+    title:'① 当期純利益 → 繰越利益剰余金（P/L → B/S）',
+    body:'P/Lで稼いだ純利益は、配当を差し引いた後にB/Sの繰越利益剰余金として積み上がる。これがP/LとB/Sをつなぐ最重要リンク。決算ごとに「貯金箱」に積み立てられるイメージ。<br><br><code>M99 = L99 + M37 + M159</code>（M159は配当で負の値なのでそのまま足す）'},
+  c2:{ color:'#994A15', from:'er-pl-ni',      to:'er-cfs-ni',      arc:true,
+    title:'② 当期純利益 → CFS の出発点（P/L → CFS）',
+    body:'間接法のCFSはP/Lの当期純利益を出発点として作成する。そこから「現金を動かさない費用の加算」「現金が動いたのに費用でない項目の調整」を積み上げて実際のキャッシュフローを求める。<br><br><code>M109 = M37</code>（純利益をそのまま参照）'},
+  c3:{ color:'#6B3F8E', from:'er-pl-da',      to:'er-cfs-da',      arc:true, also:'er-bs-ppe',
+    title:'D&A 減価償却費（P/L → B/S PP&E / CFS 加算）',
+    body:'減価償却費は現金を伴わない費用。P/Lでは費用計上されるが実際には現金が出ていかない。間接法CFSでは純利益に足し戻す。同時にB/SのPP&E帳簿価額を毎期減少させる。<br><br><code>M111 = M59</code>（PP&Eロールフォワードのと連動）'},
+  c4:{ color:'#1A5C35', from:'er-cfs-endcash', to:'er-bs-cash',    arc:false,
+    title:'④ 期末現金 → B/S 現金・預金（CFS → B/S）',
+    body:'CFSで計算した期末現金残高はB/Sの現金・預金と完全一致しなければならない。この接続が切れると貸借対照表がバランスしない。実際に空欄になっていたことで発覚したエラー。<br><br><code>M44 = M168</code>'},
+  c5:{ color:'#0F5B5E', from:'er-bs-wc',      to:'er-cfs-wc',      arc:false,
+    title:'⑤ 運転資本の変化（B/S → CFS 営業CF）',
+    body:'売掛金・棚卸資産が増えると、商品・サービスを提供したが現金をまだ受け取っていないため、CFSはマイナス。買掛金が増えると仕入れたが代金を払っていないためCFSはプラス。符号ミスが最多エラーの原因。<br><br><code>=-(M45-L45)</code>（売掛金増加はCFSでマイナス）'},
+  c6:{ color:'#1B4A7A', from:'er-bs-ppe',     to:'er-cfs-capex',   arc:false,
+    title:'⑥ PP&E / 設備投資（B/S → CFS 投資CF）',
+    body:'設備投資（Capex）はB/SのPP&E残高を増加させ、同時にCFSの投資CF（現金の出）にマイナスで計上される。PP&Eロールフォワードで管理した Capex をそのままCFSへ反映。<br><br><code>M130 = -M58</code>'},
+  c7:{ color:'#2A1F18', from:'er-bs-debt',    to:'er-cfs-fin',     arc:false,
+    title:'⑦ 有利子負債 → CFS 財務CF（B/S → CFS）',
+    body:'銀行借入・社債発行はCFS財務CFにプラス、返済・償還はマイナス。これがB/Sの有利子負債残高の増減と連動する。専用の有利子負債スケジュールで返済・借入を毎年管理する。'},
+  c8:{ color:'#7D5A00', from:'er-bs-debt',    to:'er-pl-intexp',   arc:false,
+    title:'⑧ 有利子負債 → P/L 金融費用（B/S → P/L）',
+    body:'期首の有利子負債残高 × 平均調達金利 = 金融費用（支払利息）としてP/Lに計上される。B/SとP/Lをつなぐ利息計算リンク。期首残高ベースで計算するのが標準。<br><br><code>M29 = (L76+L85) × Assumptions!M8</code>'},
+};
+
+function erGetEdge(elId, side) {
+  const el = document.getElementById(elId);
+  const wrap = document.getElementById('er-wrap');
+  if (!el || !wrap) return null;
+  const er = el.getBoundingClientRect();
+  const wr = wrap.getBoundingClientRect();
+  const y = er.top + er.height/2 - wr.top;
+  if (side === 'right') return { x: er.right - wr.left, y };
+  if (side === 'left')  return { x: er.left  - wr.left, y };
+  return { x: er.left + er.width/2 - wr.left, y };
+}
+
+function erBoxSide(fromId, toId) {
+  // Determine which sides to connect based on box order
+  const boxes = { pl: ['er-pl-da','er-pl-intexp','er-pl-ni'],
+                  bs: ['er-bs-cash','er-bs-wc','er-bs-ppe','er-bs-debt','er-bs-re'],
+                  cfs:['er-cfs-ni','er-cfs-da','er-cfs-wc','er-cfs-capex','er-cfs-fin','er-cfs-endcash'] };
+  const getBox = id => Object.entries(boxes).find(([,v])=>v.includes(id))?.[0];
+  const fb = getBox(fromId), tb = getBox(toId);
+  const order = {pl:0, bs:1, cfs:2};
+  if (order[fb] < order[tb]) return ['right','left'];
+  if (order[fb] > order[tb]) return ['left','right'];
+  return ['right','right'];
+}
+
+function erDrawArrows(activeId) {
+  const svg = document.getElementById('er-svg');
+  const wrap = document.getElementById('er-wrap');
+  if (!svg || !wrap) return;
+  const W = wrap.offsetWidth, H = wrap.offsetHeight;
+  svg.style.width = W + 'px';
+  svg.style.height = H + 'px';
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+
+  let defs = '<defs>';
+  for (const [id,c] of Object.entries(ER_CONNS)) {
+    const op = (!activeId || activeId===id) ? 1 : 0.3;
+    defs += `<marker id="am-${id}" markerWidth="7" markerHeight="6" refX="6" refY="3" orient="auto"><polygon points="0 0,7 3,0 6" fill="${c.color}" opacity="${op}"/></marker>`;
+  }
+  defs += '</defs>';
+
+  let paths = '';
+  for (const [id,conn] of Object.entries(ER_CONNS)) {
+    const [fSide, tSide] = erBoxSide(conn.from, conn.to);
+    const fp = erGetEdge(conn.from, fSide);
+    const tp = erGetEdge(conn.to, tSide);
+    if (!fp || !tp) continue;
+
+    const isActive = activeId === id;
+    const op = (!activeId || isActive) ? (isActive ? 1 : 0.55) : 0.15;
+    const sw = isActive ? 2.5 : 1.8;
+    const dash = conn.arc ? '5,3' : 'none';
+
+    let d;
+    if (conn.arc) {
+      // Arc: go over the top of boxes
+      const topY = Math.min(fp.y, tp.y) - 40;
+      d = `M${fp.x},${fp.y} C${fp.x+30},${topY} ${tp.x-30},${topY} ${tp.x},${tp.y}`;
+    } else if (fSide === 'left' && tSide === 'right') {
+      // Right-to-left (B/S → P/L): go slightly under
+      const mid = (fp.x + tp.x) / 2;
+      d = `M${fp.x},${fp.y} C${mid},${fp.y} ${mid},${tp.y} ${tp.x},${tp.y}`;
+    } else {
+      const mid = (fp.x + tp.x) / 2;
+      d = `M${fp.x},${fp.y} C${mid},${fp.y} ${mid},${tp.y} ${tp.x},${tp.y}`;
+    }
+
+    paths += `<path d="${d}" fill="none" stroke="${conn.color}" stroke-width="${sw}" stroke-dasharray="${dash}" marker-end="url(#am-${id})" opacity="${op}"/>`;
+
+    // Also draw to the 'also' target if present
+    if (conn.also) {
+      const [,asSide] = erBoxSide(conn.from, conn.also);
+      const ap = erGetEdge(conn.also, asSide);
+      if (ap) {
+        const mid2 = (fp.x + ap.x) / 2;
+        const d2 = `M${fp.x},${fp.y} C${mid2},${fp.y} ${mid2},${ap.y} ${ap.x},${ap.y}`;
+        paths += `<path d="${d2}" fill="none" stroke="${conn.color}" stroke-width="${sw}" stroke-dasharray="4,3" marker-end="url(#am-${id})" opacity="${op*0.7}"/>`;
+      }
+    }
+  }
+  svg.innerHTML = defs + paths;
+}
+
+window.erShowConn = function(id) {
+  const conn = ER_CONNS[id];
+  if (!conn) return;
+  const panel = document.getElementById('er-desc');
+  panel.style.display = 'block';
+  panel.style.borderLeftColor = conn.color;
+  panel.innerHTML = `<strong style="display:block;margin-bottom:8px;font-size:14px;color:${conn.color};">${conn.title}</strong>${conn.body}`;
+  document.querySelectorAll('.er-item.er-linked').forEach(el => {
+    const conns = el.dataset.conns || '';
+    el.style.background = conns.includes(id) ? conn.color+'20' : '';
+    el.style.outline = conns.includes(id) ? `2px solid ${conn.color}60` : '';
+    el.style.outlineOffset = '-2px';
+  });
+  erDrawArrows(id);
+};
+
+let erTimer;
+function erInit() { clearTimeout(erTimer); erTimer = setTimeout(() => erDrawArrows(), 80); }
+document.addEventListener('DOMContentLoaded', erInit);
+window.addEventListener('resize', erInit);
+})();
+</script>
+
+<!-- 4. Excelの構造 -->
+<section class="section" id="structure">
+  <div class="section-number">SECTION 4</div>
+  <h2>Excelモデルの全体設計</h2>
+  <p class="lead">モデルは4つのシートで構成され、列方向（横）に時系列、行方向（縦）にP/L→B/S→CFSが並びます。</p>
+
+  <h3 class="sub-heading">4つのシートの役割</h3>
+  <div class="card-grid">
+    <div class="card"><h3>Raw Data シート</h3><p>有価証券報告書から転記した過去8年分の実績データ（P/L・B/S・CFS）</p></div>
+    <div class="card blue"><h3>jgbcm シート</h3><p>日本国債（JGB）の金利データ。将来の調達金利予測の基礎。</p></div>
+    <div class="card" style="border-left-color:var(--gold)"><h3>Assumptions シート [重要]</h3><p>すべての予測前提を一元管理。成長率・金利・Capex率・DOEなど。</p></div>
+    <div class="card green"><h3>Model シート（本体）</h3><p>P/L・B/S・CFSが縦に並ぶ。D列〜L列が実績、M列〜Q列が予測（2026E〜2030E）。</p></div>
+  </div>
+
+  <h3 class="sub-heading">Modelシートのカラムマッピング（実際のExcel）</h3>
+
+  <div class="xl-legend">
+    <div class="xl-legend-item"><div class="xl-legend-dot" style="background:#1F4E79"></div>青文字：入力値（ハードコード）</div>
+    <div class="xl-legend-item"><div class="xl-legend-dot" style="background:#1A1A2E"></div>黒文字：数式</div>
+    <div class="xl-legend-item"><div class="xl-legend-dot" style="background:#375623"></div>緑文字：他シート参照</div>
+  </div>
+
+  <div class="excel-wrap">
+    <div class="excel-title">📊 2501_financial_model.xlsx — Model シート <span>（列のレイアウト）</span></div>
+    <div class="formula-bar"><span class="cell-ref" id="fr1">A1</span><span style="color:#555;font-size:11px;">fx</span><span class="formula-text" id="ff1">（セルをクリックすると数式が表示されます）</span></div>
+    <div class="excel-table-wrap">
+      <table class="xl" onclick="xlClick(event,'fr1','ff1')">
+        <tr>
+          <th class="row-header"></th>
+          <th class="col-header">A</th>
+          <th class="col-header">D</th><th class="col-header">E</th><th class="col-header">F</th>
+          <th class="col-header">G</th><th class="col-header">H</th><th class="col-header">I</th>
+          <th class="col-header">J</th><th class="col-header">K</th><th class="col-header">L</th>
+          <th class="col-header" style="background:#FEF9EC;">M</th>
+          <th class="col-header" style="background:#FEF9EC;">N</th>
+          <th class="col-header" style="background:#FEF9EC;">O</th>
+          <th class="col-header" style="background:#FEF9EC;">P</th>
+          <th class="col-header" style="background:#FEF9EC;">Q</th>
+        </tr>
+        <tr>
+          <th class="row-header">1</th>
+          <td class="label section-hdr" colspan="10">実績（過去8年） ← 有価証券報告書より転記</td>
+          <td class="section-hdr" colspan="5" style="background:#7D5A00;">予測 ← Assumptionsシートの前提で自動計算</td>
+        </tr>
+        <tr>
+          <th class="row-header">2</th>
+          <td class="label" style="font-weight:700; color:var(--navy);">年度</td>
+          <td class="hardcode" style="text-align:center;">2017</td>
+          <td class="hardcode" style="text-align:center;">2018</td>
+          <td class="hardcode" style="text-align:center;">2019</td>
+          <td class="hardcode" style="text-align:center;">2020</td>
+          <td class="hardcode" style="text-align:center;">2021</td>
+          <td class="hardcode" style="text-align:center;">2022</td>
+          <td class="hardcode" style="text-align:center;">2023</td>
+          <td class="hardcode" style="text-align:center;">2024</td>
+          <td class="hardcode" style="text-align:center;">2025</td>
+          <td class="hardcode" style="text-align:center; background:#FEF9EC; color:#7D5A00; font-weight:800;" data-ref="M2" data-formula="2026E（推定）">2026E</td>
+          <td class="hardcode" style="text-align:center; background:#FEF9EC; color:#7D5A00;" data-ref="N2" data-formula="2027E（推定）">2027E</td>
+          <td class="hardcode" style="text-align:center; background:#FEF9EC; color:#7D5A00;" data-ref="O2" data-formula="2028E（推定）">2028E</td>
+          <td class="hardcode" style="text-align:center; background:#FEF9EC; color:#7D5A00;" data-ref="P2" data-formula="2029E（推定）">2029E</td>
+          <td class="hardcode" style="text-align:center; background:#FEF9EC; color:#7D5A00;" data-ref="Q2" data-formula="2030E（推定）">2030E</td>
+        </tr>
+        <tr>
+          <th class="row-header">7</th>
+          <td class="label section-hdr-blue" colspan="15">損益計算書（P/L） — 行7〜38</td>
+        </tr>
+        <tr>
+          <th class="row-header">8</th>
+          <td class="label">売上収益</td>
+          <td class="hardcode">436,060</td><td class="hardcode">448,003</td>
+          <td class="hardcode" colspan="7">…（実績）</td>
+          <td class="formula" style="background:#FEF9EC;" data-ref="M8" data-formula="=L8*(1+Assumptions!M3)　← 前年×成長率">505,000</td>
+          <td class="formula" style="background:#FEF9EC;" data-ref="N8" data-formula="=M8*(1+Assumptions!N3)">517,625</td>
+          <td class="formula" style="background:#FEF9EC;" colspan="3">…</td>
+        </tr>
+        <tr>
+          <th class="row-header">40</th>
+          <td class="label section-hdr-green" colspan="15">貸借対照表（B/S） — 行40〜104</td>
+        </tr>
+        <tr>
+          <th class="row-header">44</th>
+          <td class="label indent1">現金及び現金同等物</td>
+          <td class="hardcode">23,500</td><td class="hardcode">22,000</td>
+          <td class="hardcode" colspan="7">…（実績）</td>
+          <td class="formula" style="background:#FEF9EC; color:var(--red); font-weight:700;" data-ref="M44" data-formula="=M168　← CFSの期末現金と連動（最重要リンク）">156,709</td>
+          <td class="formula" style="background:#FEF9EC;" data-ref="N44" data-formula="=N168">188,515</td>
+          <td class="formula" style="background:#FEF9EC;" colspan="3">…</td>
+        </tr>
+        <tr>
+          <th class="row-header">108</th>
+          <td class="label section-hdr-gold" colspan="15">キャッシュフロー計算書（CFS） — 行108〜168</td>
+        </tr>
+        <tr>
+          <th class="row-header">168</th>
+          <td class="label indent1">期末現金残高</td>
+          <td class="hardcode">23,500</td><td class="hardcode">22,000</td>
+          <td class="hardcode" colspan="7">…（実績）</td>
+          <td class="formula" style="background:#FEF9EC; color:var(--red); font-weight:700;" data-ref="M168" data-formula="=M166+M165+M167　← 期首+増減+その他">156,709</td>
+          <td class="formula" style="background:#FEF9EC;" data-ref="N168" data-formula="=N166+N165+N167">188,515</td>
+          <td class="formula" style="background:#FEF9EC;" colspan="3">…</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- 5. P/Lモデリング -->
+<section class="section" id="pl">
+  <div class="section-number">SECTION 5</div>
+  <h2>ステップ1：損益計算書（P/L）のモデリング</h2>
+  <p class="lead">P/Lは「売上から費用を引いていく」構造。各費用は「売上に対する比率（マージン）」で予測するのが基本です。</p>
+
+  <div class="excel-wrap">
+    <div class="excel-title">📊 P/L モデリング（2026E） <span>百万円</span></div>
+    <div class="formula-bar"><span class="cell-ref" id="fr2">M8</span><span style="color:#555;font-size:11px;">fx</span><span class="formula-text" id="ff2">=L8*(1+Assumptions!M3)</span></div>
+    <div class="excel-table-wrap">
+      <table class="xl" onclick="xlClick(event,'fr2','ff2')">
+        <tr>
+          <th class="row-header"></th>
+          <th class="col-header" style="min-width:220px;">A（項目）</th>
+          <th class="col-header">L（2025実績）</th>
+          <th class="col-header" style="background:#FEF9EC;">M（2026E）</th>
+          <th class="col-header" style="min-width:280px;">モデリングの考え方</th>
+        </tr>
+        <tr><th class="row-header">8</th><td class="label" style="font-weight:700;">売上収益</td><td class="hardcode">493,374</td><td class="formula" style="background:#FEF9EC;" data-ref="M8" data-formula="=L8*(1+Assumptions!M3)　→ 2.5%成長を仮定">505,000</td><td class="label" style="font-size:12px; color:var(--text-mid);">前年 × (1 + 成長率)。成長率はAssumptionsシート。</td></tr>
+        <tr><th class="row-header">18</th><td class="label indent1" style="color:var(--red);">－ 売上原価</td><td class="hardcode" style="color:var(--red);">335,109</td><td class="formula" style="background:#FEF9EC;" data-ref="M18" data-formula="=M8*Assumptions!M4　→ COGS率67.5%を適用">340,875</td><td class="label" style="font-size:12px; color:var(--text-mid);">COGS率 × 売上収益。過去実績の平均から設定。</td></tr>
+        <tr><th class="row-header">21</th><td class="label" style="font-weight:700; color:var(--green);">＝ 売上総利益</td><td class="formula" style="color:var(--green);">158,265</td><td class="formula" style="background:#FEF9EC; color:var(--green); font-weight:700;" data-ref="M21" data-formula="=M8-M18">164,125</td><td class="label" style="font-size:12px; color:var(--text-mid);">=売上収益 − 売上原価</td></tr>
+        <tr><th class="row-header">22</th><td class="label indent1" style="color:var(--red);">－ 販管費（SGA）</td><td class="hardcode" style="color:var(--red);">134,630</td><td class="formula" style="background:#FEF9EC;" data-ref="M22" data-formula="=M8*Assumptions!M5　→ SGA率26.9%">135,680</td><td class="label" style="font-size:12px; color:var(--text-mid);">SGA率 × 売上収益。</td></tr>
+        <tr><th class="row-header">27</th><td class="label" style="font-weight:700;">＝ 営業利益</td><td class="formula" style="font-weight:700;">23,635</td><td class="formula" style="background:#FEF9EC; font-weight:700;" data-ref="M27" data-formula="=M21-M22+その他営業損益">28,445</td><td class="label" style="font-size:12px; color:var(--text-mid);">=粗利 − SGA ± その他営業損益</td></tr>
+        <tr><th class="row-header">28</th><td class="label indent1" style="color:var(--green);">＋ 金融収益</td><td class="hardcode" style="color:var(--green);">2,842</td><td class="xref" style="background:#FEF9EC;" data-ref="M28" data-formula="=L44*Assumptions!M11　→ 期首現金×金融収益率">3,876</td><td class="label" style="font-size:12px; color:var(--text-mid);">期首現金 × 金融収益率（Assumptions参照）</td></tr>
+        <tr><th class="row-header">29</th><td class="label indent1" style="color:var(--red);">－ 金融費用</td><td class="hardcode" style="color:var(--red);">4,121</td><td class="formula" style="background:#FEF9EC; color:var(--red);" data-ref="M29" data-formula="=(L76+L85)*Assumptions!M8　→ 期首有利子負債×調達金利3.44%">4,839</td><td class="label" style="font-size:12px; color:var(--text-mid);">期首有利子負債合計 × 平均調達金利</td></tr>
+        <tr><th class="row-header">31</th><td class="label" style="font-weight:700;">＝ 税引前利益</td><td class="formula" style="font-weight:700;">22,356</td><td class="formula" style="background:#FEF9EC; font-weight:700;" data-ref="M31" data-formula="=M27+M28-M29+持分法利益">27,202</td><td></td></tr>
+        <tr><th class="row-header">32</th><td class="label indent1" style="color:var(--red);">－ 法人税</td><td class="hardcode" style="color:var(--red);">7,478</td><td class="formula" style="background:#FEF9EC; color:var(--red);" data-ref="M32" data-formula="=M31*Assumptions!M7　→ 実効税率31%">8,433</td><td class="label" style="font-size:12px; color:var(--text-mid);">税引前利益 × 実効税率（過去平均31%）</td></tr>
+        <tr><th class="row-header">35</th><td class="label total-row" style="font-weight:700;">＝ 当期純利益（全体）</td><td class="total">14,878</td><td class="total" style="background:#FEF9EC;" data-ref="M35" data-formula="=M31-M32-M33">18,769</td><td></td></tr>
+        <tr><th class="row-header">37</th><td class="label total-row" style="font-weight:700; color:var(--navy);">＝ 当期純利益（親会社帰属）</td><td class="total">14,422</td><td class="total" style="background:#FEF9EC; color:var(--navy);" data-ref="M37" data-formula="=M35-M36　→ 非支配持分を除いた親会社帰属分（利益剰余金に使用）">18,284</td><td class="label" style="font-size:12px; color:var(--red); font-weight:600;">← 利益剰余金（M99）に使う。M35ではなくM37！</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="callout info">
+    <strong>なぜM37を使うのか（M35ではなく）</strong>
+    M35は連結グループ全体の純利益。M37は「親会社株主に帰属する利益」。サッポロHDには子会社の少数株主（非支配持分）がいるため、その分の利益（M36）はNCI持分に積み上がります。利益剰余金の計算でM35を使うと二重計上になります。
+  </div>
+</section>
+
+<!-- 6. B/Sモデリング -->
+<section class="section" id="bs">
+  <div class="section-number">SECTION 6</div>
+  <h2>ステップ2：貸借対照表（B/S）のモデリング</h2>
+  <p class="lead">大原則：<strong>資産合計 ＝ 負債合計 ＋ 資本合計</strong>（常に成立）。これが崩れたらどこかに計算ミスがあります。</p>
+
+  <div class="excel-wrap">
+    <div class="excel-title">📊 B/S モデリング（2026E） <span>百万円</span></div>
+    <div class="formula-bar"><span class="cell-ref" id="fr3">M44</span><span style="color:#555;font-size:11px;">fx</span><span class="formula-text" id="ff3">=M168　← CFSの期末現金と連動（最重要リンク）</span></div>
+    <div class="excel-table-wrap">
+      <table class="xl" onclick="xlClick(event,'fr3','ff3')">
+        <tr>
+          <th class="row-header"></th>
+          <th class="col-header" style="min-width:220px;">A（項目）</th>
+          <th class="col-header">L（2025実績）</th>
+          <th class="col-header" style="background:#FEF9EC;">M（2026E）</th>
+          <th class="col-header" style="min-width:280px;">モデリングの考え方</th>
+        </tr>
+        <tr><th class="row-header">40</th><td class="label section-hdr-blue" colspan="4">【資産の部】</td></tr>
+        <tr><th class="row-header">44</th><td class="label indent1" style="font-weight:700; color:var(--red);">現金及び現金同等物</td><td class="hardcode">22,360</td><td class="formula" style="background:#FEF9EC; color:var(--red); font-weight:700;" data-ref="M44" data-formula="=M168　← CFSの期末現金残高を引っ張る（自分では計算しない）">156,709</td><td class="label" style="font-size:12px; color:var(--red); font-weight:600;">← CFSの計算結果。予測するのではなく連動させる。</td></tr>
+        <tr><th class="row-header">45</th><td class="label indent1">売掛金（AR）</td><td class="hardcode">93,296</td><td class="formula" style="background:#FEF9EC;" data-ref="M45" data-formula="=M8*Assumptions!M15/365　→ 売上収益×AR回転日数68日÷365">93,973</td><td class="label" style="font-size:12px; color:var(--text-mid);">売上収益 × AR回転日数（68日）÷ 365</td></tr>
+        <tr><th class="row-header">46</th><td class="label indent1">棚卸資産（在庫）</td><td class="hardcode">45,012</td><td class="formula" style="background:#FEF9EC;" data-ref="M46" data-formula="=M18*Assumptions!M14/365　→ 売上原価×在庫回転日数52日÷365">48,574</td><td class="label" style="font-size:12px; color:var(--text-mid);">売上原価 × 在庫回転日数（52日）÷ 365</td></tr>
+        <tr><th class="row-header">53</th><td class="label indent1">有形固定資産（PP&E）</td><td class="hardcode">144,970</td><td class="formula" style="background:#FEF9EC;" data-ref="M53" data-formula="=M57+M58-M59+M60　← ロールフォワードで計算">137,559</td><td class="label" style="font-size:12px; color:var(--text-mid);">ロールフォワード（次セクション参照）</td></tr>
+        <tr><th class="row-header">70</th><td class="label total-row" style="font-weight:700; color:var(--navy);">資産合計</td><td class="total">653,690</td><td class="total" style="background:#FEF9EC; font-weight:800; color:var(--navy);" data-ref="M70" data-formula="=SUM(各資産行)">638,000</td><td class="label" style="font-size:12px; color:var(--green); font-weight:600;">← バリデーション：=ABS(M104-M70)&lt;=1 でTRUE確認</td></tr>
+        <tr><th class="row-header">71</th><td class="label section-hdr-green" colspan="4">【負債の部】</td></tr>
+        <tr><th class="row-header">75</th><td class="label indent1">買掛金（AP）</td><td class="hardcode">36,484</td><td class="formula" style="background:#FEF9EC;" data-ref="M75" data-formula="=M18*Assumptions!M13/365　→ 売上原価×AP回転日数39日÷365">36,403</td><td class="label" style="font-size:12px; color:var(--text-mid);">売上原価 × AP回転日数（39日）÷ 365</td></tr>
+        <tr><th class="row-header">76</th><td class="label indent1">流動社債・借入金</td><td class="hardcode">51,390</td><td class="hardcode" style="background:#FEF9EC;" data-ref="M76" data-formula="=15400+6000+11159　← 翌期返済予定の金額（有報スケジュールより手入力）">32,559</td><td class="label" style="font-size:12px; color:var(--text-mid);">翌期の返済予定額を有報注記から手入力</td></tr>
+        <tr><th class="row-header">85</th><td class="label indent1">非流動社債・借入金</td><td class="hardcode">119,199</td><td class="formula" style="background:#FEF9EC;" data-ref="M85" data-formula="=(L76+L85)+M156+M158-M76　← ロールフォワード（行挿入後M155→M156に修正した！）">108,034</td><td class="label" style="font-size:12px; color:var(--text-mid);">ロールフォワード（詳細は有利子負債スケジュールセクション）</td></tr>
+        <tr><th class="row-header">99</th><td class="label indent1" style="font-weight:700; color:var(--navy);">利益剰余金</td><td class="hardcode">85,689</td><td class="formula" style="background:#FEF9EC; color:var(--navy); font-weight:700;" data-ref="M99" data-formula="=L99+M37+M159　← 前期末＋親会社帰属純利益＋配当（マイナス値）">99,508</td><td class="label" style="font-size:12px; color:var(--red); font-weight:600;">← M35ではなくM37！M159は配当（マイナス値）をそのまま足す。</td></tr>
+        <tr><th class="row-header">104</th><td class="label total-row" style="font-weight:700; color:var(--navy);">負債及び資本合計</td><td class="total">653,690</td><td class="total" style="background:#FEF9EC; font-weight:800; color:var(--navy);" data-ref="M104" data-formula="=SUM(各負債行)+SUM(各資本行)">638,000</td><td class="label" style="font-size:12px; color:var(--green); font-weight:600;">← M70と一致すればバランス。差が1以下ならOK。</td></tr>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- 7. PP&E -->
+<section class="section" id="ppe">
+  <div class="section-number">SECTION 7</div>
+  <h2>PP&Eロールフォワード：設備投資の「出入り管理」</h2>
+  <p class="lead">固定資産は毎年「減価償却」で減り、「設備投資（Capex）」で増えます。この出入りを正確に追うのが「ロールフォワード」です。</p>
+
+  <div class="rollforward">
+    <div class="rf-box open">
+      <h4>期首残高（2025年末）</h4>
+      <div class="big">144,970</div>
+      <small>百万円</small>
+    </div>
+    <div class="rf-arrow">+</div>
+    <div class="rf-ops">
+      <div class="plus">＋ Capex（設備投資）</div>
+      <div style="font-size:14px; font-weight:700; color:var(--green);">14,914</div>
+      <div style="color:var(--border); font-size:18px;">──────</div>
+      <div class="minus">－ D&A（減価償却費）</div>
+      <div style="font-size:14px; font-weight:700; color:var(--red);">22,325</div>
+      <div style="color:var(--border); font-size:18px;">──────</div>
+      <div>± その他増減</div>
+      <div>0</div>
+    </div>
+    <div class="rf-arrow">=</div>
+    <div class="rf-box close">
+      <h4>期末残高（2026E）</h4>
+      <div class="big">137,559</div>
+      <small>百万円</small>
+    </div>
+  </div>
+
+  <div class="excel-wrap">
+    <div class="excel-title">📊 PP&E ロールフォワード（行57〜60）</div>
+    <div class="formula-bar"><span class="cell-ref" id="fr4">M53</span><span style="color:#555;font-size:11px;">fx</span><span class="formula-text" id="ff4">=M57+M58-M59+M60</span></div>
+    <div class="excel-table-wrap">
+      <table class="xl" onclick="xlClick(event,'fr4','ff4')">
+        <tr>
+          <th class="row-header"></th>
+          <th class="col-header" style="min-width:220px;">A（項目）</th>
+          <th class="col-header">L（2025）</th>
+          <th class="col-header" style="background:#FEF9EC;">M（2026E）</th>
+          <th class="col-header" style="min-width:250px;">数式</th>
+        </tr>
+        <tr><th class="row-header">53</th><td class="label" style="font-weight:700;">PP&E 期末残高</td><td class="hardcode">144,970</td><td class="formula" style="background:#FEF9EC; font-weight:700;" data-ref="M53" data-formula="=M57+M58-M59+M60">137,559</td><td class="label" style="font-family:monospace; font-size:12px; color:var(--navy);">=M57+M58-M59+M60</td></tr>
+        <tr><th class="row-header">57</th><td class="label indent1">期首残高</td><td class="hardcode">153,265</td><td class="formula" style="background:#FEF9EC;" data-ref="M57" data-formula="=L53　← 前期末の残高を引っ張る">144,970</td><td class="label" style="font-family:monospace; font-size:12px; color:var(--navy);">=L53（前期末残高）</td></tr>
+        <tr><th class="row-header">58</th><td class="label indent1" style="color:var(--green);">＋ 設備投資（Capex）</td><td class="hardcode" style="color:var(--green);">14,204</td><td class="formula" style="background:#FEF9EC; color:var(--green);" data-ref="M58" data-formula="=M8*Assumptions!M55　→ 売上収益×Capex率3.0%">14,914</td><td class="label" style="font-family:monospace; font-size:12px; color:var(--green);">=M8*Capex率（3.0%）<br><span style="font-size:11px; color:var(--text-mid);">→ CFS投資CF: M130=-M58</span></td></tr>
+        <tr><th class="row-header">59</th><td class="label indent1" style="color:var(--red);">－ 減価償却費（D&A）</td><td class="hardcode" style="color:var(--red);">22,499</td><td class="formula" style="background:#FEF9EC; color:var(--red);" data-ref="M59" data-formula="=M57*Assumptions!M56　→ 期首PP&E×D&A率16%">22,325</td><td class="label" style="font-family:monospace; font-size:12px; color:var(--red);">=M57*D&A率（16%）<br><span style="font-size:11px; color:var(--text-mid);">→ CFS営業CF: M111=M59</span></td></tr>
+        <tr><th class="row-header">60</th><td class="label indent1">± その他増減</td><td class="hardcode">0</td><td class="hardcode" style="background:#FEF9EC;" data-ref="M60" data-formula="=0　← 予測期間は特別な理由がない限りゼロ">0</td><td class="label" style="font-family:monospace; font-size:12px;">予測期間は0（为替・減損なし前提）</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="callout tip">
+    <strong>CFSとの連動（2本のリンク）</strong>
+    Capex（M58）は<code>=M58</code>でそのままCFS投資CFへ（マイナスにして支出として）。D&A（M59）はCFS営業CF（M111）に加算（非現金費用なので間接法で戻す）。この2本が切れるとB/Sが崩れます。
+  </div>
+</section>
+
+<!-- 8. CFSモデリング -->
+<section class="section" id="cfs">
+  <div class="section-number">SECTION 8</div>
+  <h2>ステップ3：CFSのモデリング（間接法）</h2>
+  <p class="lead">CFSは「間接法」で作成します。P/Lの純利益からスタートして、「現金ではなかった部分」を調整していく方法です。</p>
+
+  <div class="excel-wrap">
+    <div class="excel-title">📊 営業活動によるCF — 間接法（行109〜128）</div>
+    <div class="formula-bar"><span class="cell-ref" id="fr5">M128</span><span style="color:#555;font-size:11px;">fx</span><span class="formula-text" id="ff5">=M124+M125+M126+M127</span></div>
+    <div class="excel-table-wrap">
+      <table class="xl" onclick="xlClick(event,'fr5','ff5')">
+        <tr>
+          <th class="row-header"></th>
+          <th class="col-header" style="min-width:230px;">A（項目）</th>
+          <th class="col-header" style="background:#FEF9EC;">M（2026E）</th>
+          <th class="col-header" style="min-width:280px;">数式・説明</th>
+        </tr>
+        <tr><th class="row-header">109</th><td class="label">税引前利益</td><td class="formula" style="background:#FEF9EC;" data-ref="M109" data-formula="=M31　← P/Lの税引前利益と連動">27,202</td><td class="label" style="font-size:12px; color:var(--text-mid);">=M31（P/Lとのリンク）</td></tr>
+        <tr><th class="row-header">111</th><td class="label indent1" style="color:var(--green);">＋ 減価償却費・償却費</td><td class="formula" style="background:#FEF9EC; color:var(--green);" data-ref="M111" data-formula="=M59　← PP&EのD&Aと連動（現金を使わない費用なので加算）">22,325</td><td class="label" style="font-size:12px; color:var(--green);">=M59（現金支出なし → 加算して戻す）</td></tr>
+        <tr><th class="row-header">113</th><td class="label indent1" style="color:var(--red);">－ 受取利息・配当（除外）</td><td class="formula" style="background:#FEF9EC; color:var(--red);" data-ref="M113" data-formula="=-M28　← 金融収益をマイナス（後でM125で再計上）">-3,876</td><td class="label" style="font-size:12px; color:var(--text-mid);">=−M28（一旦除外。後ほどM125で再計上）</td></tr>
+        <tr><th class="row-header">114</th><td class="label indent1" style="color:var(--green);">＋ 支払利息（戻し）</td><td class="formula" style="background:#FEF9EC; color:var(--green);" data-ref="M114" data-formula="=M29　← 支払利息をプラス（後でM126でマイナス）">4,839</td><td class="label" style="font-size:12px; color:var(--text-mid);">=M29（一旦加算。後ほどM126で実際の支払として減算）</td></tr>
+        <tr><th class="row-header">118</th><td class="label indent1" style="color:var(--red);">± AR変化</td><td class="formula" style="background:#FEF9EC; color:var(--red);" data-ref="M118" data-formula="=-(M45-L45)　← AR増加→キャッシュ減。マイナス符号が必須！">-227</td><td class="label" style="font-size:12px; color:var(--red); font-weight:600;">= <strong>-(M45-L45)</strong>　← マイナス必須！AR増加は現金が来ていない証拠</td></tr>
+        <tr><th class="row-header">119</th><td class="label indent1" style="color:var(--red);">± 在庫変化</td><td class="formula" style="background:#FEF9EC; color:var(--red);" data-ref="M119" data-formula="=-(M46-L46)　← 在庫増加→現金使用。マイナス符号が必須！">-2,232</td><td class="label" style="font-size:12px; color:var(--red); font-weight:600;">= <strong>-(M46-L46)</strong>　← マイナス必須！在庫増加は現金を使った証拠</td></tr>
+        <tr><th class="row-header">120</th><td class="label indent1" style="color:var(--green);">± AP変化</td><td class="formula" style="background:#FEF9EC; color:var(--green);" data-ref="M120" data-formula="=M75-L75　← AP増加→まだ払っていない。プラスでOK">-542</td><td class="label" style="font-size:12px; color:var(--text-mid);">=M75-L75（AP増加はプラス：まだ払っていない）</td></tr>
+        <tr><th class="row-header">124</th><td class="label total-row">小計</td><td class="total" style="background:#FEF9EC;" data-ref="M124" data-formula="=M109+M110+M111+...+M123">53,663</td><td></td></tr>
+        <tr><th class="row-header">125</th><td class="label indent1" style="color:var(--green);">＋ 利息・配当の受取</td><td class="formula" style="background:#FEF9EC; color:var(--green);" data-ref="M125" data-formula="=M28　← M113で除外した金融収益を実際の受取として再計上">3,876</td><td></td></tr>
+        <tr><th class="row-header">126</th><td class="label indent1" style="color:var(--red);">－ 利息の支払</td><td class="formula" style="background:#FEF9EC; color:var(--red);" data-ref="M126" data-formula="=-M114　← M114で加算した支払利息を実際の現金支払として減算">-4,839</td><td></td></tr>
+        <tr><th class="row-header">127</th><td class="label indent1" style="color:var(--red);">－ 法人税の支払</td><td class="formula" style="background:#FEF9EC; color:var(--red);" data-ref="M127" data-formula="=-M32　← P/Lの法人税を現金支払として計上">-8,433</td><td></td></tr>
+        <tr><th class="row-header">128</th><td class="label total-row" style="font-weight:700; color:var(--navy);">営業活動によるCF合計</td><td class="total" style="background:#FEF9EC; font-weight:800; font-size:14px; color:var(--navy);" data-ref="M128" data-formula="=M124+M125+M126+M127">44,267</td><td class="label" style="font-size:12px; color:var(--green); font-weight:600;">✓ 合計を確認</td></tr>
+        <tr><th class="row-header">151</th><td class="label total-row" style="font-weight:700; color:var(--blue);">投資活動によるCF合計</td><td class="total" style="background:#FEF9EC; color:var(--blue); font-weight:700;" data-ref="M151" data-formula="=SUM(M130:M150)　→ Capex-14,914 + 不動産売却+139,455">+124,541</td><td class="label" style="font-size:12px; color:var(--blue);">不動産売却（M134=L50-L82=139,455）が大きい</td></tr>
+        <tr><th class="row-header">163</th><td class="label total-row" style="font-weight:700; color:var(--red);">財務活動によるCF合計</td><td class="total" style="background:#FEF9EC; color:var(--red); font-weight:700;" data-ref="M163" data-formula="=SUM(M153:M162)　→ 長期返済-19,995 社債-10,000 配当-4,465 リース-3,877">-38,337</td><td></td></tr>
+        <tr><th class="row-header">168</th><td class="label total-row" style="font-weight:700; font-size:14px;">期末現金残高</td><td class="total" style="background:#FEF3DC; font-weight:800; font-size:16px; color:var(--navy);" data-ref="M168" data-formula="=M166+M165+M167　→ 22,360+130,471+3,878 = 156,709">156,709</td><td class="label" style="font-size:12px; color:var(--red); font-weight:600;">← B/SのM44と一致させる（M44=M168）</td></tr>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- 9. 符号の重要性 -->
+<section class="section" id="signs">
+  <div class="section-number">SECTION 9</div>
+  <h2>運転資本変化の符号（初心者最大のつまずき）</h2>
+  <p class="lead">「増加」＝「現金が<strong>減る</strong>」という逆の発想が必要です。実際にこのモデルでも符号ミスにより<strong>約5,000百万円</strong>のB/Sズレが発生しました。</p>
+
+  <table class="sign-table">
+    <tr><th>科目</th><th>変化方向</th><th>CFSへの影響</th><th>現実のイメージ</th><th>正しいExcel数式</th></tr>
+    <tr><td>AR（売掛金）</td><td class="up">増加 ↑</td><td class="minus">マイナス（−）</td><td>売れたけどまだ現金が来ていない</td><td><code>=-(M45-L45)</code></td></tr>
+    <tr><td>AR（売掛金）</td><td class="down">減少 ↓</td><td class="plus">プラス（＋）</td><td>以前の売掛金をようやく回収した</td><td><code>=-(M45-L45)</code></td></tr>
+    <tr><td>在庫</td><td class="up">増加 ↑</td><td class="minus">マイナス（−）</td><td>現金を使って在庫を買い込んだ</td><td><code>=-(M46-L46)</code></td></tr>
+    <tr><td>在庫</td><td class="down">減少 ↓</td><td class="plus">プラス（＋）</td><td>在庫が売れて現金になった</td><td><code>=-(M46-L46)</code></td></tr>
+    <tr><td>AP（買掛金）</td><td class="up">増加 ↑</td><td class="plus">プラス（＋）</td><td>仕入れたけどまだ払っていない（→現金温存）</td><td><code>=M75-L75</code></td></tr>
+    <tr><td>AP（買掛金）</td><td class="down">減少 ↓</td><td class="minus">マイナス（−）</td><td>以前の買掛金を払った</td><td><code>=M75-L75</code></td></tr>
+  </table>
+
+  <div class="callout danger">
+    <strong>実際に起きたミス（NG例）</strong>
+    <div class="error-compare" style="margin-top:10px;">
+      <div class="ec-wrong"><div class="ec-label">誤り</div>M118 = M45 - L45<br><span style="color:var(--text-mid); font-size:11px;">AR増加（+227）が誤ってプラスに → 現金が余分にあると計算される</span></div>
+      <div class="ec-right"><div class="ec-label">正しい</div>M118 = -(M45 - L45)<br><span style="color:var(--text-mid); font-size:11px;">AR増加（+227）が正しくマイナス（-227）になる</span></div>
+    </div>
+    AR・在庫の合計で <strong>約4,900百万円</strong> のCFS過大計上 → B/Sが6,173百万円ズレる原因となりました。
+  </div>
+</section>
+
+<!-- 10. 三表の連動 -->
+<section class="section" id="links">
+  <div class="section-number">SECTION 10</div>
+  <h2>三表の連動：絶対に切れてはいけない「橋」</h2>
+  <p class="lead">財務三表統合モデルでは、特定のセルが3つの表をつないでいます。これを「連動リンク」と呼びます。1本でも切れるとモデルが崩壊します。</p>
+
+  <div class="card-grid" style="grid-template-columns: 1fr;">
+    <div class="card red"><h3>リンク① CFS期末現金 → B/S現金（最重要）</h3>
+      <p>M44 = M168　　CFSで計算した期末現金がB/Sの現金と一致しなければなりません。<br>実際にM44が<strong>空欄</strong>になっていて発見されたエラーです。</p>
+      <div class="formula-box" style="margin-top:10px;">M44 <span class="ok">= M168</span><span class="comment">　← CFSの期末残高をそのまま参照</span></div>
+    </div>
+    <div class="card gold"><h3>リンク② P/L純利益 → B/S利益剰余金</h3>
+      <p>純利益（M37）が毎年利益剰余金に積み上がり、配当（M159）が差し引かれます。</p>
+      <div class="formula-box">M99 <span class="ok">= L99 + M37 + M159</span><span class="comment">　← M35ではなくM37！配当(M159)はマイナス値なのでそのまま足す</span></div>
+    </div>
+    <div class="card blue"><h3>リンク③ PP&E D&A → CFS営業CF（間接法加算）</h3>
+      <p>減価償却費（D&A）は現金を使わない費用。間接法CFSで純利益に加算して戻します。</p>
+      <div class="formula-box">M111 <span class="ok">= M59</span><span class="comment">　← PP&EロールフォワードのD&Aと連動</span></div>
+    </div>
+    <div class="card green"><h3>リンク④ PP&E Capex → CFS投資CF</h3>
+      <p>設備投資は現金の「出」なのでマイナス符号をつけてCFS投資CFへ。</p>
+      <div class="formula-box">M130 <span class="ok">= -M58</span><span class="comment">　← PP&EのCapexをマイナスで計上</span></div>
+    </div>
+    <div class="card blue"><h3>リンク⑤ B/S期首有利子負債 → P/L金融費用</h3>
+      <p>その年の利息は「その年の初め（期首）にいくら借りていたか」をベースに計算します。</p>
+      <div class="formula-box">M29 <span class="ok">= (L76+L85) * Assumptions!M8</span><span class="comment">　← 期首残高×調達金利</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- 11. 有利子負債スケジュール -->
+<section class="section" id="debt">
+  <div class="section-number">SECTION 11</div>
+  <h2>有利子負債スケジュール：借金の「動き」を管理する</h2>
+  <p class="lead">有利子負債は毎年「返済した分減り、借りた分増える」複雑な動きをします。専用スケジュールで正確に追うのが基本です。</p>
+
+  <h3 class="sub-heading">社債の償還スケジュール（有報注記より）</h3>
+  <table class="val-table">
+    <tr><th>社債名</th><th>発行額</th><th>利率</th><th>償還年月</th><th>財務CF計上行</th></tr>
+    <tr><td>第33回社債</td><td>100億円</td><td>0.20%</td><td style="color:var(--red); font-weight:600;">2026年9月</td><td><code>M158 = -10,000</code></td></tr>
+    <tr><td>第37回社債</td><td>200億円</td><td>0.45%</td><td style="color:var(--orange); font-weight:600;">2028年6月</td><td><code>O158 = -20,000</code></td></tr>
+    <tr><td>第34回社債</td><td>100億円</td><td>0.30%</td><td style="color:var(--orange); font-weight:600;">2029年9月</td><td><code>P158 = -10,000</code></td></tr>
+  </table>
+
+  <h3 class="sub-heading">非流動有利子負債のロールフォワード（M85）</h3>
+  <div class="formula-box">
+<span class="comment">// M85 = 非流動社債・借入金（2026E）</span>
+M85 <span class="ok">= (L76+L85)</span>     <span class="comment">← 前期末の有利子負債合計（流動＋非流動）</span>
+   <span class="ok">+ M155</span>            <span class="comment">← 新規長期借入収入（今期はゼロ）</span>
+   <span class="ok">+ M157</span>            <span class="comment">← 社債発行収入（今期はゼロ）</span>
+   <span class="ok">+ M156</span>            <span class="comment">← 長期借入返済（-19,995 ←マイナス値）</span>
+   <span class="ok">+ M158</span>            <span class="comment">← 社債償還（-10,000 ←マイナス値）</span>
+   <span class="ok">- M76</span>             <span class="comment">← 翌期の流動分（来年返済予定→B/S流動に移す）</span>
+
+= 170,588 + 0 + 0 - 19,995 - 10,000 - 32,559 <span class="ok">= 108,034</span>  ✓
+  </div>
+
+  <div class="callout danger">
+    <strong>実際に起きた行ズレ問題（教訓）</strong>
+    投資CFに「不動産事業売却収入」の行を新規挿入したところ、以下の行がすべて1行ずつ下にシフト。<br>
+    <code>挿入前：行155=長期借入返済、行157=社債償還</code><br>
+    <code>挿入後：行156=長期借入返済、行158=社債償還</code><br><br>
+    しかしM85の数式は古い行番号（M155・M157）を参照したまま→M155は今度は「長期借入収入=0」を指す→返済額が全く反映されない→<strong>非流動社債残高が23,822百万円過大計上！</strong><br><br>
+    <strong>教訓：行を挿入したら参照セルを全件確認する。</strong>
+  </div>
+</section>
+
+<!-- 12. エラー5選 -->
+<section class="section" id="errors">
+  <div class="section-number">SECTION 12</div>
+  <h2>よくあるエラー：実際にこのモデルで起きた5つの問題</h2>
+  <p class="lead">実際のモデリング作業で発生したバグと修正方法を記録します。どれも「それっぽい数字」が出てしまうため発見が難しいです。</p>
+
+  <div class="error-card">
+    <div class="error-card-header"><div class="num">01</div><h4>運転資本の符号が逆</h4></div>
+    <div class="error-card-body">
+      <div class="error-compare">
+        <div class="ec-wrong"><div class="ec-label">誤り</div>M118 = M45 - L45<br>M119 = M46 - L46</div>
+        <div class="ec-right"><div class="ec-label">正しい</div>M118 = -(M45 - L45)<br>M119 = -(M46 - L46)</div>
+      </div>
+      <p class="ec-impact">影響：AR・在庫の合計で約4,900百万円のCFS過大計上 → B/Sズレの最大原因</p>
+    </div>
+  </div>
+
+  <div class="error-card">
+    <div class="error-card-header"><div class="num">02</div><h4>行挿入による行ズレ</h4></div>
+    <div class="error-card-body">
+      <div class="error-compare">
+        <div class="ec-wrong"><div class="ec-label">誤り（旧行番号）</div>M85 = (L76+L85) + M155 + M157 - M76</div>
+        <div class="ec-right"><div class="ec-label">正しい（新行番号）</div>M85 = (L76+L85) + M156 + M158 - M76</div>
+      </div>
+      <p class="ec-impact">影響：非流動社債残高が23,822百万円過大計上</p>
+    </div>
+  </div>
+
+  <div class="error-card">
+    <div class="error-card-header"><div class="num">03</div><h4>B/S現金とCFSが未リンク</h4></div>
+    <div class="error-card-body">
+      <div class="error-compare">
+        <div class="ec-wrong"><div class="ec-label">誤り</div>M44 = （空欄）</div>
+        <div class="ec-right"><div class="ec-label">正しい</div>M44 = M168</div>
+      </div>
+      <p class="ec-impact">影響：B/Sの現金がゼロのまま → 資産合計が大幅に減少</p>
+    </div>
+  </div>
+
+  <div class="error-card">
+    <div class="error-card-header"><div class="num">04</div><h4>支払利息のCFS加算が逆符号</h4></div>
+    <div class="error-card-body">
+      <div class="error-compare">
+        <div class="ec-wrong"><div class="ec-label">誤り</div>M114 = -M29（マイナスで加算）</div>
+        <div class="ec-right"><div class="ec-label">正しい</div>M114 = M29（プラスで加算→後でM126=-M114として支払計上）</div>
+      </div>
+      <p class="ec-impact">影響：営業CFの支払利息調整が二重にマイナスになる</p>
+    </div>
+  </div>
+
+  <div class="error-card">
+    <div class="error-card-header"><div class="num">05</div><h4>利益剰余金にM35（全体純利益）を使用</h4></div>
+    <div class="error-card-body">
+      <div class="error-compare">
+        <div class="ec-wrong"><div class="ec-label">誤り</div>M99 = L99 + M35 + M159</div>
+        <div class="ec-right"><div class="ec-label">正しい</div>M99 = L99 + M37 + M159（親会社帰属分のみ）</div>
+      </div>
+      <p class="ec-impact">影響：非支配持分（NCI）の利益が利益剰余金に二重計上 ≈ 43百万円/年</p>
+    </div>
+  </div>
+</section>
+
+<!-- 13. バリデーション -->
+<section class="section" id="validation">
+  <div class="section-number">SECTION 13</div>
+  <h2>バリデーション：モデルが正しいかを自動チェック</h2>
+  <p class="lead">財務モデルには数百のセルが存在し、ミスがあっても「それっぽい数字」になることがあります。TRUEが返ればOK、FALSEが返ればどこかに問題があります。</p>
+
+  <table class="val-table">
+    <tr><th>#</th><th>チェック内容</th><th>Excelの式</th><th>正常</th></tr>
+    <tr><td>1</td><td><strong>B/Sバランス</strong>（資産＝負債＋資本）</td><td class="check">=ABS(M104-M70)&lt;=1</td><td><span class="val-badge">TRUE</span></td></tr>
+    <tr><td>2</td><td><strong>現金非負</strong>（現金がマイナスにならない）</td><td class="check">=M44&gt;=0</td><td><span class="val-badge">TRUE</span></td></tr>
+    <tr><td>3</td><td><strong>CFS期末現金＝B/S現金</strong></td><td class="check">=ABS(M168-M44)&lt;=1</td><td><span class="val-badge">TRUE</span></td></tr>
+    <tr><td>4</td><td><strong>CFS期首現金＝前期B/S現金</strong></td><td class="check">=ABS(M166-L44)&lt;=1</td><td><span class="val-badge">TRUE</span></td></tr>
+    <tr><td>5</td><td><strong>利益剰余金の繰越整合</strong></td><td class="check">=ABS(M99-(L99+M37+M159))&lt;=1</td><td><span class="val-badge">TRUE</span></td></tr>
+    <tr><td>6</td><td><strong>PP&Eロールフォワード整合</strong></td><td class="check">=ABS(M53-(M57+M58-M59+M60))&lt;=1</td><td><span class="val-badge">TRUE</span></td></tr>
+    <tr><td>7</td><td><strong>有利子負債スケジュール整合</strong></td><td class="check">=ABS((M76+M85)-(L76+L85)+ABS(M156)+ABS(M158))&lt;=1</td><td><span class="val-badge">TRUE</span></td></tr>
+    <tr><td>8</td><td><strong>純資産非負</strong>（債務超過チェック）</td><td class="check">=M103&gt;=0</td><td><span class="val-badge">TRUE</span></td></tr>
+    <tr><td>9</td><td><strong>DOE合理的範囲</strong>（1〜5%）</td><td class="check">=AND(ABS(M159)/L101&gt;=0.01, ABS(M159)/L101&lt;=0.05)</td><td><span class="val-badge">TRUE</span></td></tr>
+    <tr><td>10</td><td><strong>Net Debt/EBITDA 10倍以下</strong></td><td class="check">=(M76+M85+M77+M86-M44)/(M27+M111)&lt;10</td><td><span class="val-badge">TRUE</span></td></tr>
+  </table>
+
+  <div class="callout info">
+    <strong>なぜ ±1 の誤差を許容するのか</strong>
+    Excelでは小数点以下の端数が積み重なるため、1百万円未満の誤差が生じることがあります。財務モデルでは「1百万円以下の差は実質ゼロ」として <code>=ABS(差額)&lt;=1</code> パターンを使います。
+  </div>
+</section>
+
+<!-- 14. 財務指標 -->
+<section class="section" id="metrics">
+  <div class="section-number">SECTION 14</div>
+  <h2>財務指標の読み方：完成したモデルから何が見えるか</h2>
+  <p class="lead">2026年の不動産事業売却が財務指標に与えるインパクトは劇的です。</p>
+
+  <table class="metrics-table">
+    <tr>
+      <th>指標</th>
+      <th>2023</th><th>2024</th><th>2025</th>
+      <th style="background:var(--gold);">2026E</th>
+      <th>2027E</th><th>2028E</th>
+    </tr>
+    <tr>
+      <td>Net Debt（百万円）</td>
+      <td class="bad">228,000</td><td class="bad">212,000</td><td class="caution">176,000</td>
+      <td class="highlight">12,000</td>
+      <td class="good">-31,000</td><td class="good">-72,000</td>
+    </tr>
+    <tr>
+      <td>Net Debt/EBITDA</td>
+      <td class="bad">7.0x</td><td class="bad">6.4x</td><td class="caution">3.7x</td>
+      <td class="highlight">0.2x</td>
+      <td class="good">-0.6x</td><td class="good">-1.4x</td>
+    </tr>
+    <tr>
+      <td>営業利益率</td>
+      <td>2.3%</td><td>2.0%</td><td>4.8%</td>
+      <td class="highlight">5.6%</td>
+      <td>5.5%</td><td>5.9%</td>
+    </tr>
+    <tr>
+      <td>ROE</td>
+      <td>4.8%</td><td>3.9%</td><td>8.9%</td>
+      <td class="highlight">8.0%</td>
+      <td class="good">13.1%</td><td class="good">12.8%</td>
+    </tr>
+    <tr>
+      <td>AR回転日数</td>
+      <td>69日</td><td>68日</td><td>68日</td>
+      <td class="highlight">68日</td>
+      <td>68日</td><td>68日</td>
+    </tr>
+    <tr>
+      <td>DOE</td>
+      <td>1.97%</td><td>2.01%</td><td>2.07%</td>
+      <td class="highlight">2.04%</td>
+      <td>2.04%</td><td>2.05%</td>
+    </tr>
+  </table>
+
+  <div class="card-grid" style="grid-template-columns: 1fr 1fr;">
+    <div class="card gold">
+      <h3>Net Debt/EBITDAの大転換</h3>
+      <p>2023〜2025年は7倍前後と高レバレッジ状態（銀行が警戒し始めるのは5〜7倍）。不動産売却により2026Eは0.2倍に急低下。2027年以降は<strong>ネットキャッシュ</strong>（現金 ＞ 借金）に転換。</p>
+    </div>
+    <div class="card green">
+      <h3>ROE改善の要因</h3>
+      <p>2027E以降13%前後まで上昇。非効率な不動産資産が外れることで継続事業のROEが向上する<strong>ポートフォリオ改革</strong>の効果。外国人投資家の要求水準（10〜15%）に近づく。</p>
+    </div>
+  </div>
+</section>
+
+<!-- 15. まとめ -->
+<section class="section" id="summary">
+  <div class="section-number">SECTION 15</div>
+  <h2>まとめ：財務三表統合モデル構築の全体フロー</h2>
+  <p class="lead">10ステップでゼロからモデルを構築できます。</p>
+
+  <div class="steps">
+    <div class="step"><div class="step-num blue">1</div><div class="step-content"><h4>[準備] EDINET から過去8年の有報をダウンロード</h4><p>https://edinet.fsa.go.jp から有価証券報告書を取得。P/L・B/S・CFSの実績値を取得する。</p></div></div>
+    <div class="step"><div class="step-num blue">2</div><div class="step-content"><h4>[準備] 実績値を Raw Data シートに転記</h4><p>P/L・B/S・CFSを各行にセット。IFRSと日本基準で科目名が異なるため注意。</p></div></div>
+    <div class="step"><div class="step-num blue">3</div><div class="step-content"><h4>[準備] 有報注記から社債・借入・リースのスケジュール確認</h4><p>社債の償還スケジュール、リース負債の満期分析、有利子負債の金利内訳を確認。これがないと財務CFが正確に作れない。</p></div></div>
+    <div class="step"><div class="step-num gold">4</div><div class="step-content"><h4>[仮定] Assumptions シートに全前提を一元管理</h4><p>成長率・マージン・金利・Capex率・D&A率・AR/在庫/AP回転日数・DOEなどをAssumptionsシートだけに入力。</p></div></div>
+    <div class="step"><div class="step-num green">5</div><div class="step-content"><h4>[P/L] セグメント別売上→費用→各段階利益の順に組む</h4><p>前年×(1+成長率)で売上を伸ばし、各費用は売上比率でモデリング。</p></div></div>
+    <div class="step"><div class="step-num green">6</div><div class="step-content"><h4>[P/L] 金融費用・金融収益・法人税を設定</h4><p>金融費用 = 期首有利子負債 × 調達金利。法人税 = 税引前利益 × 実効税率。</p></div></div>
+    <div class="step"><div class="step-num orange">7</div><div class="step-content"><h4>[B/S] PP&E ロールフォワードを構築</h4><p>期首残高 + Capex − D&A = 期末残高。CapexはCFS投資CFへ、D&AはCFS営業CFへ自動連動。</p></div></div>
+    <div class="step"><div class="step-num orange">8</div><div class="step-content"><h4>[B/S] 有利子負債スケジュールを構築</h4><p>社債の償還計画を正確に入力。行挿入後は参照行番号を必ず確認する。</p></div></div>
+    <div class="step"><div class="step-num orange">9</div><div class="step-content"><h4>[B/S] 運転資本を回転日数ベースで算出、利益剰余金をリンク</h4><p>AR・在庫・APは売上/原価×回転日数÷365。利益剰余金 = 前期末 + M37（親会社帰属）+ M159（配当）。</p></div></div>
+    <div class="step"><div class="step-num red">10</div><div class="step-content"><h4>[CFS] 間接法でCFSを組み、M44=M168のリンクを確認</h4><p>最後にB/S現金（M44）=CFS期末残高（M168）を結ぶ。全バリデーションがTRUEになるまで修正を繰り返す。</p></div></div>
+  </div>
+
+  <h3 class="sub-heading" style="margin-top:40px;">絶対に忘れないこと 3つ</h3>
+  <div class="card-grid" style="grid-template-columns: 1fr 1fr 1fr;">
+    <div class="card red"><h3>(1) 運転資本の符号</h3><p>AR・在庫の増加 → CFS マイナス<br><code>=-(M45-L45)</code><br>符号ミスは5,000百万円超のズレにつながる。</p></div>
+    <div class="card orange"><h3>(2) 行挿入後の確認</h3><p>行を挿入したら参照セルを全件確認する。行番号ズレが発見しにくい重大バグの元。23,822百万円ズレ事例あり。</p></div>
+    <div class="card green"><h3>(3) バリデーション常時表示</h3><p>10個のチェックをモデル上部に常時表示しておく。FALSEに即対応する習慣が正確なモデルを維持する。</p></div>
+  </div>
+
+  <div style="margin-top:48px; padding:24px; background:var(--navy-dk); border-radius:8px; color:var(--white); text-align:center;">
+    <p style="font-size:14px; color:var(--gold-lt); margin-bottom:8px;">データ出所</p>
+    <p style="font-size:13px; color:#BDC8D4; line-height:1.8;">
+      サッポロホールディングス 有価証券報告書（IFRS連結基準）2017〜2025年度<br>
+      モデル対象期間：2026E〜2030E（予測）　　資料作成：2026年5月
+    </p>
+  </div>
+</section>
+
+</div><!-- /main -->
+
+<script>
+// Sidebar active state
+function scrollTo(id) {
+  document.getElementById(id).scrollIntoView({ behavior: 'smooth' });
+}
+const sections = document.querySelectorAll('.section[id]');
+const navItems = document.querySelectorAll('.nav-item');
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      navItems.forEach(n => n.classList.remove('active'));
+      const active = document.querySelector(`.nav-item[onclick="scrollTo('${e.target.id}')"]`);
+      if (active) active.classList.add('active');
+    }
+  });
+}, { threshold: 0.25 });
+sections.forEach(s => observer.observe(s));
+
+// Glossary accordion
+function toggleGloss(header) {
+  const item = header.closest('.gloss-item');
+  const isOpen = item.classList.contains('open');
+  item.classList.toggle('open', !isOpen);
+  item.querySelector('.gloss-body').style.display = isOpen ? 'none' : 'block';
+}
+
+// Glossary search
+function filterGlossary() {
+  const q = document.getElementById('glossary-search').value.toLowerCase();
+  document.querySelectorAll('.gloss-item').forEach(item => {
+    const text = item.dataset.term + ' ' + item.textContent;
+    item.classList.toggle('hidden', q.length > 0 && !text.toLowerCase().includes(q));
+  });
+  // Show/hide category headers
+  document.querySelectorAll('.gloss-category').forEach(cat => {
+    let next = cat.nextElementSibling;
+    let hasVisible = false;
+    while (next && !next.classList.contains('gloss-category')) {
+      if (!next.classList.contains('hidden')) hasVisible = true;
+      next = next.nextElementSibling;
+    }
+    cat.style.display = hasVisible ? '' : 'none';
+  });
+}
+
+// Excel cell click → formula bar update
+function xlClick(ev, refId, formulaId) {
+  const td = ev.target.closest('td');
+  if (!td || !td.dataset.ref) return;
+  document.getElementById(refId).textContent = td.dataset.ref;
+  document.getElementById(formulaId).textContent = td.dataset.formula || td.textContent.trim();
+  // clear previous selected in same table
+  const table = ev.currentTarget;
+  table.querySelectorAll('td.selected').forEach(c => c.classList.remove('selected'));
+  td.classList.add('selected');
+}
+</script>
+</body>
+</html>
